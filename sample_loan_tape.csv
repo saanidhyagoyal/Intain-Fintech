@@ -1,0 +1,8 @@
+loan_id,borrower_id,loan_type,origination_date,maturity_date,original_principal,current_balance,interest_rate,term_months,borrower_state,loan_purpose,credit_grade,employment_length,income_band,payment_status,days_past_due,servicer_name,last_payment_date,last_updated_at,document_status,source_system
+L-001,B-1001,CONVENTIONAL,2022-01-15,2052-01-15,250000,235000,4.25,360,California,Purchase,A,10+ years,$100K-$150K,CURRENT,0,WellsFargo,2024-07-01,2024-07-15,COMPLETE,LOS_PRIMARY
+L-002,B-1002,FHA,2021-06-01,2051-06-01,180000,172000,3.75,360,FL,Refinance,B,5 years,$75K-$100K,LATE,30,ChaseBank,2024-06-15,2024-07-10,COMPLETE,LOS_PRIMARY
+L-003,B-1003,VA,2023-03-20,2053-03-20,320000,-5000,5.10,360,Texas,Purchase,A,8 years,$150K+,CURRENT,0,USBank,2024-07-01,2024-07-14,COMPLETE,LOS_PRIMARY
+L-004,,JUMBO,2020-11-01,2019-11-01,500000,485000,6.00,360,New York,Purchase,C,3 years,$200K+,DELINQUENT,60,CitiMortgage,2024-05-01,2024-07-12,INCOMPLETE,LOS_PRIMARY
+L-005,B-1005,CONVENTIONAL,invalid-date,2054-08-01,275000,260000,4.50,360,Illinois,Refinance,B,7 years,$100K-$150K,ACTIVE_DUTY,0,PNCBank,2024-07-01,2024-07-15,COMPLETE,LOS_PRIMARY
+L-006,B-1006,ARM,2022-09-01,2052-09-01,195000,188000,3.90,360,Georgia,Purchase,A,10+ years,$100K-$150K,CURRENT,0,Regions,2024-07-01,2023-01-01,COMPLETE,LOS_PRIMARY
+L-007,B-1007,HELOC,2021-01-01,2041-01-01,150000,142000,150.00,240,Ohio,Purchase,D,2 years,$50K-$75K,CURRENT,0,KeyBank,2024-07-01,2024-07-14,COMPLETE,LOS_PRIMARY
