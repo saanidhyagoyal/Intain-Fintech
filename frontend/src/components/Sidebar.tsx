@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Upload, AlertCircle, Shield, Database,
-  LogOut, ChevronRight, Sparkles,
+  Upload, AlertCircle, Shield, Database,
+  LogOut, ChevronRight, Sparkles, FileSearch, Cpu, Lock, History,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -20,9 +20,9 @@ export default function Sidebar({ role, username }: SidebarProps) {
 
   const roleLabel: Record<string, string> = {
     ADMIN: 'Master Admin',
-    DATA_OPERATOR: 'Operator',
+    DATA_OPERATOR: 'Data Operator',
     REVIEWER: 'Reviewer',
-    DATA_CONSUMER: 'Consumer',
+    DATA_CONSUMER: 'Data Consumer',
   };
 
   const roleColor: Record<string, string> = {
@@ -32,14 +32,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
     DATA_CONSUMER: 'from-emerald-500 to-teal-500',
   };
 
-  const navItems = [
-    { to: '/', icon: <LayoutDashboard className="w-4.5 h-4.5" />, label: 'Dashboard', roles: ['ADMIN', 'DATA_OPERATOR', 'REVIEWER', 'DATA_CONSUMER'] },
-    { to: '/admin', icon: <Shield className="w-4.5 h-4.5" />, label: 'Master Admin', roles: ['ADMIN'] },
-    { to: '/upload', icon: <Upload className="w-4.5 h-4.5" />, label: 'Ingest Data', roles: ['ADMIN', 'DATA_OPERATOR', 'REVIEWER'] },
-    { to: '/exceptions', icon: <AlertCircle className="w-4.5 h-4.5" />, label: 'Exceptions', roles: ['ADMIN', 'DATA_OPERATOR', 'REVIEWER'] },
-    { to: '/verified', icon: <Shield className="w-4.5 h-4.5" />, label: 'Verified Loans', roles: ['ADMIN', 'REVIEWER', 'DATA_CONSUMER'] },
-    { to: '/loans', icon: <Database className="w-4.5 h-4.5" />, label: 'All Loans', roles: ['ADMIN', 'DATA_OPERATOR', 'REVIEWER', 'DATA_CONSUMER'] },
-  ];
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
+      isActive
+        ? 'bg-brand-600/20 text-brand-400 shadow-sm'
+        : 'text-surface-400 hover:text-surface-100 hover:bg-surface-800/60'
+    }`;
 
   return (
     <aside className="w-64 h-screen fixed left-0 top-0 bg-surface-900/80 backdrop-blur-xl border-r border-surface-700/40 flex flex-col z-50">
@@ -50,7 +48,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-sm font-bold gradient-text">Loan Copilot</h1>
+            <h1 className="text-sm font-bold gradient-text">Intain Copilot</h1>
             <p className="text-[10px] text-surface-500 uppercase tracking-wider">Data Verification</p>
           </div>
         </div>
@@ -58,26 +56,102 @@ export default function Sidebar({ role, username }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {navItems
-          .filter((item) => item.roles.includes(role))
-          .map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
-                  isActive
-                    ? 'bg-brand-600/20 text-brand-400 shadow-sm'
-                    : 'text-surface-400 hover:text-surface-100 hover:bg-surface-800/60'
-                }`
-              }
-            >
-              {item.icon}
-              <span className="flex-1">{item.label}</span>
+
+        {/* ─── ADMIN: Grouped Sections ─── */}
+        {role === 'ADMIN' && (
+          <>
+            <NavLink to="/" end className={navLinkClass}>
+              <Shield className="w-4 h-4" />
+              <span className="flex-1">Master Admin</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-          ))}
+
+            <div className="px-3 pt-4 pb-1">
+              <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Operations</span>
+            </div>
+            <NavLink to="/upload" className={navLinkClass}>
+              <Upload className="w-4 h-4" />
+              <span className="flex-1">Ingestion Hub</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+            <NavLink to="/loans" className={navLinkClass}>
+              <Database className="w-4 h-4" />
+              <span className="flex-1">All Loans</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+
+            <div className="px-3 pt-4 pb-1">
+              <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Triage</span>
+            </div>
+            <NavLink to="/exceptions" className={navLinkClass}>
+              <AlertCircle className="w-4 h-4" />
+              <span className="flex-1">Exception Queue</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+            <NavLink to="/self-healing" className={navLinkClass}>
+              <Cpu className="w-4 h-4" />
+              <span className="flex-1">Self-Healing Rules</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+
+            <div className="px-3 pt-4 pb-1">
+              <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Consumer Ledger</span>
+            </div>
+            <NavLink to="/verified" className={navLinkClass}>
+              <Lock className="w-4 h-4" />
+              <span className="flex-1">Verified Portfolio</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+          </>
+        )}
+
+        {/* ─── DATA OPERATOR: Ingestion only ─── */}
+        {role === 'DATA_OPERATOR' && (
+          <>
+            <NavLink to="/" end className={navLinkClass}>
+              <Upload className="w-4 h-4" />
+              <span className="flex-1">Ingestion Hub</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+            <NavLink to="/loans" className={navLinkClass}>
+              <FileSearch className="w-4 h-4" />
+              <span className="flex-1">Ingestion Logs</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+          </>
+        )}
+
+        {/* ─── REVIEWER: Triage only ─── */}
+        {role === 'REVIEWER' && (
+          <>
+            <NavLink to="/" end className={navLinkClass}>
+              <AlertCircle className="w-4 h-4" />
+              <span className="flex-1">Exception Queue</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+            <NavLink to="/self-healing" className={navLinkClass}>
+              <Cpu className="w-4 h-4" />
+              <span className="flex-1">Self-Healing Rules</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+          </>
+        )}
+
+        {/* ─── DATA CONSUMER: Verified & Audit only ─── */}
+        {role === 'DATA_CONSUMER' && (
+          <>
+            <NavLink to="/" end className={navLinkClass}>
+              <Lock className="w-4 h-4" />
+              <span className="flex-1">Verified Portfolio</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+            <NavLink to="/audit" className={navLinkClass}>
+              <History className="w-4 h-4" />
+              <span className="flex-1">Audit & Lineage</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+          </>
+        )}
 
       </nav>
 

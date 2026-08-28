@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { Users, Shield, Database, Activity } from 'lucide-react';
+import { Users, Shield, Upload, AlertCircle, Lock } from 'lucide-react';
 import OperatorDash from './OperatorDash';
 import ReviewerDash from './ReviewerDash';
 import ConsumerDash from './ConsumerDash';
 
 export default function AdminDash() {
-  const [activeTab, setActiveTab] = useState<'upload' | 'queue' | 'verified'>('upload');
+  const [activeTab, setActiveTab] = useState<'operations' | 'triage' | 'ledger'>('operations');
 
   const TABS = [
-    { id: 'upload', label: 'Ingestion & Operations', icon: <Database className="w-4 h-4" /> },
-    { id: 'queue', label: 'Review & Exceptions', icon: <Activity className="w-4 h-4" /> },
-    { id: 'verified', label: 'Verified Vault', icon: <Shield className="w-4 h-4" /> }
+    { id: 'operations', label: 'Operations', sectionLabel: 'OPERATIONS', icon: <Upload className="w-4 h-4" />, desc: 'Ingestion & Pipeline' },
+    { id: 'triage', label: 'Triage', sectionLabel: 'TRIAGE', icon: <AlertCircle className="w-4 h-4" />, desc: 'Exceptions & AI' },
+    { id: 'ledger', label: 'Consumer Ledger', sectionLabel: 'CONSUMER LEDGER', icon: <Lock className="w-4 h-4" />, desc: 'Verified & Audit' },
   ] as const;
 
   return (
@@ -26,34 +26,37 @@ export default function AdminDash() {
               <Shield className="w-5 h-5 text-brand-400" />
               Master Admin Control
             </h1>
-            <p className="text-surface-400 mt-1 text-sm">Full oversight across all Intain Copilot modules</p>
+            <p className="text-surface-400 mt-1 text-sm">Full oversight across all Intain Copilot modules — Operations, Triage, and Consumer Ledger</p>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-2 bg-surface-900/60 p-1.5 rounded-xl border border-surface-700/50 w-full max-w-2xl">
+      {/* Section Tabs */}
+      <div className="flex space-x-2 bg-surface-900/60 p-1.5 rounded-xl border border-surface-700/50 w-full">
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
               activeTab === tab.id
                 ? 'bg-surface-800 text-brand-400 shadow-sm border border-surface-700/50'
                 : 'text-surface-400 hover:text-surface-200 hover:bg-surface-800/50'
             }`}
           >
             {tab.icon}
-            {tab.label}
+            <div className="text-left">
+              <div className="text-[10px] uppercase tracking-wider text-surface-500">[{tab.sectionLabel}]</div>
+              <div>{tab.label}</div>
+            </div>
           </button>
         ))}
       </div>
 
       {/* Content Area */}
       <div className="pt-2 animate-fade-in">
-        {activeTab === 'upload' && <OperatorDash />}
-        {activeTab === 'queue' && <ReviewerDash />}
-        {activeTab === 'verified' && <ConsumerDash />}
+        {activeTab === 'operations' && <OperatorDash />}
+        {activeTab === 'triage' && <ReviewerDash />}
+        {activeTab === 'ledger' && <ConsumerDash />}
       </div>
     </div>
   );

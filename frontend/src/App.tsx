@@ -30,6 +30,7 @@ function ProtectedLayout() {
   );
 }
 
+/** Role-based default dashboard */
 function Dashboard() {
   const user = getUser();
   if (!user) return <Navigate to="/login" replace />;
@@ -48,6 +49,14 @@ function Dashboard() {
   }
 }
 
+/** Route guard: redirects unauthorized roles */
+function RoleGuard({ allowed, children }: { allowed: string[]; children: React.ReactNode }) {
+  const user = getUser();
+  if (!user) return <Navigate to="/login" replace />;
+  if (!allowed.includes(user.role)) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -55,12 +64,48 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/admin" element={<AdminDash />} />
-          <Route path="/upload" element={<OperatorDash />} />
-          <Route path="/exceptions" element={<ReviewerDash />} />
-          <Route path="/verified" element={<ConsumerDash />} />
+
+          {/* Operator-only routes */}
+          <Route path="/upload" element={
+            <RoleGuard allowed={['ADMIN', 'DATA_OPERATOR']}>
+              <OperatorDash />
+            </RoleGuard>
+          } />
+
+          {/* Reviewer-only routes */}
+          <Route path="/exceptions" element={
+            <RoleGuard allowed={['ADMIN', 'REVIEWER']}>
+              <ReviewerDash />
+            </RoleGuard>
+          } />
+          <Route path="/self-healing" element={
+            <RoleGuard allowed={['ADMIN', 'REVIEWER']}>
+              <ReviewerDash />
+            </RoleGuard>
+          } />
+
+          {/* Consumer-only routes */}
+          <Route path="/verified" element={
+            <RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}>
+              <ConsumerDash />
+            </RoleGuard>
+          } />
+          <Route path="/audit" element={
+            <RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}>
+              <ConsumerDash />
+            </RoleGuard>
+          } />
+
+          {/* Shared routes */}
           <Route path="/loans" element={<OperatorDash />} />
           <Route path="/loans/:loanId" element={<LoanDetail />} />
+
+          {/* Admin-only */}
+          <Route path="/admin" element={
+            <RoleGuard allowed={['ADMIN']}>
+              <AdminDash />
+            </RoleGuard>
+          } />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

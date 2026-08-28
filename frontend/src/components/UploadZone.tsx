@@ -5,14 +5,16 @@ import type { IngestionResult } from '../types';
 
 interface UploadZoneProps {
   onUploadComplete?: (result: IngestionResult) => void;
+  defaultSourceType?: string;
+  compact?: boolean;
 }
 
-export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
+export default function UploadZone({ onUploadComplete, defaultSourceType, compact }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<IngestionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [sourceType, setSourceType] = useState('loan_tape');
+  const [sourceType, setSourceType] = useState(defaultSourceType || 'loan_tape');
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -55,6 +57,81 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
     if (files && files.length > 0) uploadFile(files[0]);
   };
 
+  // Compact mode: used inside the 3-slot pipeline cards
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        {/* Compact Drop zone */}
+        <div
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          className={`relative border-2 border-dashed rounded-xl p-4 text-center transition-all duration-300 cursor-pointer ${
+            isDragging
+              ? 'border-brand-400 bg-brand-500/10 scale-[1.02]'
+              : 'border-surface-600/50 hover:border-brand-500/50 hover:bg-surface-800/30'
+          } ${uploading ? 'pointer-events-none opacity-60' : ''}`}
+        >
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFileInput}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            disabled={uploading}
+          />
+          {uploading ? (
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-5 h-5 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+              <span className="text-xs text-surface-300">Processing...</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <Upload className="w-4 h-4 text-brand-400" />
+              <span className="text-xs text-surface-300 font-medium">Drop CSV or click to browse</span>
+            </div>
+          )}
+        </div>
+
+        {/* Compact Result */}
+        {result && (
+          <div className="bg-success-500/10 border border-success-500/20 rounded-xl p-3 animate-slide-up">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-success-400" />
+                <span className="text-xs font-medium text-success-400">Ingested</span>
+              </div>
+              <button onClick={() => setResult(null)} className="text-surface-500 hover:text-white">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="text-center">
+                <div className="text-lg font-bold text-brand-400">{result.total_rows}</div>
+                <div className="text-[10px] text-surface-500">Total</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-success-400">{result.imported_count}</div>
+                <div className="text-[10px] text-surface-500">Imported</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-warning-400">{result.validation_exceptions}</div>
+                <div className="text-[10px] text-surface-500">Exceptions</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-danger-500/10 border border-danger-500/20 rounded-xl p-2 text-center">
+            <span className="text-xs text-danger-400">{error}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ─── Full-size mode (legacy, used in AdminDash) ───
   return (
     <div className="space-y-4">
       {/* Source type selector */}
@@ -97,7 +174,6 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           disabled={uploading}
         />
-
         <div className="flex flex-col items-center gap-3">
           {uploading ? (
             <>
@@ -110,11 +186,9 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
                 <Upload className="w-8 h-8 text-brand-400" />
               </div>
               <div>
-                <p className="text-surface-200 font-semibold text-lg">
-                  Drop your CSV file here
-                </p>
+                <p className="text-surface-200 font-semibold text-lg">Drop your CSV file here</p>
                 <p className="text-surface-400 text-sm mt-1">
-                  or click to browse • Supports {sourceType.replace('_', ' ')} format
+                  or click to browse • Supports {sourceType.replace(/_/g, ' ')} format
                 </p>
               </div>
             </>
@@ -134,7 +208,6 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
               <X className="w-4 h-4" />
             </button>
           </div>
-
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-brand-400">{result.total_rows}</div>
@@ -153,14 +226,12 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
               <div className="text-xs text-surface-400">Exceptions</div>
             </div>
           </div>
-
           {result.conflicts_detected > 0 && (
             <div className="mt-3 flex items-center gap-2 text-warning-400 text-sm">
               <AlertTriangle className="w-4 h-4" />
               {result.conflicts_detected} conflict(s) detected with existing data
             </div>
           )}
-
           {result.failed_rows.length > 0 && (
             <details className="mt-4">
               <summary className="text-sm text-surface-400 cursor-pointer hover:text-surface-200">

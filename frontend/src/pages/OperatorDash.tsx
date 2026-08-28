@@ -1,27 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Upload, AlertTriangle, Database, Activity, FileText, TrendingUp } from 'lucide-react';
+import { Upload, Database, FileText, TrendingUp, CheckCircle, AlertTriangle, FileWarning, ArrowRight } from 'lucide-react';
 import api from '../api/client';
 import StatsCard from '../components/StatsCard';
 import UploadZone from '../components/UploadZone';
-import Table from '../components/Table';
-import type { SummaryResponse, LoanState } from '../types';
-import { useNavigate } from 'react-router-dom';
+import type { SummaryResponse } from '../types';
 
 export default function OperatorDash() {
-  const navigate = useNavigate();
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
-  const [loans, setLoans] = useState<LoanState[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [sumRes, loanRes] = await Promise.all([
-        api.get('/summary'),
-        api.get('/loans?page_size=10'),
-      ]);
-      setSummary(sumRes.data);
-      setLoans(loanRes.data.loans);
+      const res = await api.get('/summary');
+      setSummary(res.data);
     } catch { /* ignore */ }
     setLoading(false);
   };
@@ -31,80 +23,163 @@ export default function OperatorDash() {
   if (loading || !summary) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="skeleton h-8 w-1/3" />
-        </div>
+        <div className="skeleton h-8 w-1/3" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => <div key={i} className="skeleton h-24 rounded-2xl" />)}
         </div>
-        <div className="skeleton h-48 rounded-2xl" />
         <div className="skeleton h-64 rounded-2xl" />
       </div>
     );
   }
 
+  const cleanRows = summary.total_loans - (summary.exceptions_by_status?.OPEN || 0);
+  const cleanPercent = summary.total_loans > 0 ? Math.round((cleanRows / summary.total_loans) * 100) : 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-surface-100">Data Operator Dashboard</h1>
-        <p className="text-surface-400 mt-1">Ingest, validate, and monitor loan data quality</p>
+        <h1 className="text-2xl font-bold text-surface-100">Loan Ingestion & Pipeline Orchestration</h1>
+        <p className="text-surface-400 mt-1">Multi-source CSV ingestion, schema mapping, and data quality triage</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard icon={<Database className="w-5 h-5 text-brand-400" />} label="Total Loans" value={summary.total_loans} color="brand" delay={0} />
-        <StatsCard icon={<Activity className="w-5 h-5 text-info-400" />} label="Total Events" value={summary.total_events} color="info" delay={100} />
-        <StatsCard icon={<AlertTriangle className="w-5 h-5 text-warning-400" />} label="Open Exceptions" value={summary.exceptions_by_status.OPEN} color="warning" delay={200} />
-        <StatsCard icon={<TrendingUp className="w-5 h-5 text-success-400" />} label="Data Quality" value={`${summary.data_quality_score}%`} color="success" delay={300} />
+        <StatsCard icon={<Database className="w-5 h-5 text-brand-400" />} label="Total Loans Ingested" value={summary.total_loans} color="brand" delay={0} />
+        <StatsCard icon={<CheckCircle className="w-5 h-5 text-success-400" />} label="Clean Rows" value={cleanRows} color="success" delay={100} />
+        <StatsCard icon={<AlertTriangle className="w-5 h-5 text-warning-400" />} label="Exceptions Flagged" value={summary.exceptions_by_status?.OPEN || 0} color="warning" delay={200} />
+        <StatsCard icon={<TrendingUp className="w-5 h-5 text-info-400" />} label="Data Quality Score" value={`${summary.data_quality_score}%`} color="info" delay={300} />
       </div>
 
-      {/* Upload Zone */}
+      {/* Ingestion Triage Gauge */}
       <div className="glass-card p-6">
         <h2 className="text-lg font-semibold text-surface-100 mb-4 flex items-center gap-2">
-          <Upload className="w-5 h-5 text-brand-400" />
-          Ingest Data
+          <TrendingUp className="w-5 h-5 text-brand-400" />
+          Ingestion Triage Breakdown
         </h2>
-        <UploadZone onUploadComplete={() => fetchData()} />
+        <div className="flex items-center gap-6">
+          {/* Gauge Bar */}
+          <div className="flex-1">
+            <div className="w-full h-4 bg-surface-800 rounded-full overflow-hidden">
+              <div className="h-full flex">
+                <div
+                  className="bg-success-500 transition-all duration-1000"
+                  style={{ width: `${cleanPercent}%` }}
+                />
+                <div
+                  className="bg-warning-500 transition-all duration-1000"
+                  style={{ width: `${100 - cleanPercent}%` }}
+                />
+              </div>
+            </div>
+            <div className="flex justify-between mt-2 text-xs text-surface-400">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-success-500 inline-block" />
+                {cleanRows} Auto-Validated
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-warning-500 inline-block" />
+                {summary.exceptions_by_status?.OPEN || 0} Routed to Exception Queue
+              </span>
+            </div>
+          </div>
+          <div className="text-center px-6 border-l border-surface-700">
+            <div className="text-3xl font-bold text-brand-400">{summary.total_loans}</div>
+            <div className="text-xs text-surface-400 mt-1">Total Rows</div>
+          </div>
+        </div>
       </div>
 
-      {/* Recent uploads */}
+      {/* Multi-Source Ingestion Pipeline */}
+      <div className="glass-card p-6">
+        <h2 className="text-lg font-semibold text-surface-100 mb-2 flex items-center gap-2">
+          <Upload className="w-5 h-5 text-brand-400" />
+          Multi-Source Ingestion Pipeline
+        </h2>
+        <p className="text-sm text-surface-500 mb-6">Upload CSVs independently or sequentially. Each file type targets a different aspect of the loan lifecycle.</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Slot 1: Loan Tape */}
+          <div className="bg-surface-800/40 rounded-2xl p-5 border border-surface-700/50 hover:border-brand-500/30 transition-colors">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 bg-brand-500/10 rounded-xl">
+                <FileText className="w-5 h-5 text-brand-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-surface-200">Primary Loan Tape</h3>
+                <p className="text-[10px] text-surface-500 uppercase tracking-wider">loan_tape.csv</p>
+              </div>
+            </div>
+            <p className="text-xs text-surface-400 mb-4">Originator's core loan data: principal, rates, terms, and borrower details.</p>
+            <UploadZone onUploadComplete={fetchData} defaultSourceType="loan_tape" compact />
+          </div>
+
+          {/* Slot 2: Servicer Update */}
+          <div className="bg-surface-800/40 rounded-2xl p-5 border border-surface-700/50 hover:border-info-500/30 transition-colors">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 bg-info-500/10 rounded-xl">
+                <ArrowRight className="w-5 h-5 text-info-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-surface-200">Servicer Reconciliation</h3>
+                <p className="text-[10px] text-surface-500 uppercase tracking-wider">servicer_update.csv</p>
+              </div>
+            </div>
+            <p className="text-xs text-surface-400 mb-4">Servicer's operational data: current balances, payment statuses, and delinquencies.</p>
+            <UploadZone onUploadComplete={fetchData} defaultSourceType="servicer_update" compact />
+          </div>
+
+          {/* Slot 3: Document Manifest */}
+          <div className="bg-surface-800/40 rounded-2xl p-5 border border-surface-700/50 hover:border-warning-500/30 transition-colors">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 bg-warning-500/10 rounded-xl">
+                <FileWarning className="w-5 h-5 text-warning-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-surface-200">Document Custody</h3>
+                <p className="text-[10px] text-surface-500 uppercase tracking-wider">document_manifest.csv</p>
+              </div>
+            </div>
+            <p className="text-xs text-surface-400 mb-4">Custodial vault status: promissory notes, title deeds, and KYC document presence.</p>
+            <UploadZone onUploadComplete={fetchData} defaultSourceType="document_manifest" compact />
+          </div>
+        </div>
+      </div>
+
+      {/* File Lineage History */}
       {summary.recent_uploads.length > 0 && (
         <div className="glass-card p-6">
           <h2 className="text-lg font-semibold text-surface-100 mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5 text-brand-400" />
-            Recent Uploads
+            File Lineage History
           </h2>
-          <div className="space-y-2">
-            {summary.recent_uploads.map((upload, i) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-surface-800/40 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-4 h-4 text-surface-400" />
-                  <span className="text-sm text-surface-200 font-medium">{upload.filename}</span>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-surface-400">
-                  <span>{upload.records} records</span>
-                  <span>{upload.uploaded_at ? new Date(upload.uploaded_at).toLocaleString() : ''}</span>
-                </div>
-              </div>
-            ))}
+          <div className="overflow-x-auto rounded-xl">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Source File</th>
+                  <th className="text-right">Records</th>
+                  <th>Uploaded At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary.recent_uploads.map((upload, i) => (
+                  <tr key={i}>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-3.5 h-3.5 text-surface-500" />
+                        <span className="font-mono text-sm text-surface-200">{upload.filename}</span>
+                      </div>
+                    </td>
+                    <td className="text-right font-mono text-sm">{upload.records}</td>
+                    <td className="text-surface-400 text-sm">{upload.uploaded_at ? new Date(upload.uploaded_at).toLocaleString() : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
-
-      {/* Recent Loans */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
-            <Database className="w-5 h-5 text-brand-400" />
-            Recent Loans
-          </h2>
-          <button onClick={() => navigate('/loans')} className="btn-ghost text-sm">
-            View All →
-          </button>
-        </div>
-        <Table loans={loans} compact onRowClick={(id) => navigate(`/loans/${id}`)} />
-      </div>
     </div>
   );
 }

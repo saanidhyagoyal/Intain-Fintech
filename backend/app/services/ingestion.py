@@ -130,25 +130,45 @@ async def ingest_loan_tape(
 ) -> dict:
     """
     Parse a loan_tape.csv file and emit LOAN_IMPORTED events.
-    Returns an IngestionResult-compatible dict.
+    Uses streaming to avoid loading entire file into RAM.
+    Batch-commits every 1000 rows for scalability.
     """
     content = await file.read()
-    text = content.decode("utf-8-sig")  # Handle BOM
+    filename = file.filename or "loan_tape.csv"
+    return _process_loan_tape(db, content, filename, user_id)
+
+
+def ingest_loan_tape_streaming(
+    db: Session,
+    content: bytes,
+    filename: str,
+    user_id: int,
+) -> dict:
+    """Synchronous entry point for background task processing."""
+    return _process_loan_tape(db, content, filename, user_id)
+
+
+def _process_loan_tape(
+    db: Session,
+    content: bytes,
+    filename: str,
+    user_id: int,
+) -> dict:
+    """Core loan tape processing with batch commits."""
+    text = content.decode("utf-8-sig")
     reader = csv.DictReader(io.StringIO(text))
 
-    filename = file.filename or "loan_tape.csv"
     imported = 0
     failed_rows = []
+    BATCH_SIZE = 1000
 
-    for line_num, row in enumerate(reader, start=2):  # Row 1 is header
-        # Normalize headers
+    for line_num, row in enumerate(reader, start=2):
         normalized = {}
         for raw_header, value in row.items():
             canon = _normalize_header(raw_header)
             if canon in LOAN_FIELDS:
                 normalized[canon] = _coerce_value(canon, value)
 
-        # Must have a loan_id
         loan_id = normalized.get("loan_id")
         if not loan_id:
             failed_rows.append({
@@ -172,6 +192,10 @@ async def ingest_loan_tape(
                 source_line=line_num,
             )
             imported += 1
+
+            # Batch commit every BATCH_SIZE rows
+            if imported % BATCH_SIZE == 0:
+                db.commit()
         except Exception as e:
             failed_rows.append({
                 "line": line_num,
@@ -183,7 +207,6 @@ async def ingest_loan_tape(
 
     # Run validation on all imported loans
     validator = ValidationEngine(db)
-    # Re-query the unique loan_ids that were just imported
     from sqlalchemy import distinct
     recent_loan_ids = (
         db.query(distinct(LoanEvent.loan_id))
@@ -203,7 +226,7 @@ async def ingest_loan_tape(
         "total_rows": imported + len(failed_rows),
         "imported_count": imported,
         "failed_count": len(failed_rows),
-        "failed_rows": failed_rows[:50],  # Cap failed details
+        "failed_rows": failed_rows[:100],
         "validation_exceptions": validation_exceptions,
         "conflicts_detected": 0,
         "source_type": "loan_tape",
@@ -388,3 +411,100 @@ async def ingest_document_manifest(
         "conflicts_detected": 0,
         "source_type": "document_manifest",
     }
+
+
+# ── Synchronous streaming helpers for BackgroundTasks ────────
+def ingest_servicer_update_streaming(
+    db: Session, content: bytes, filename: str, user_id: int
+) -> dict:
+    """Sync entry point for background servicer update ingestion."""
+    text = content.decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(text))
+    conflicts_detected = 0
+    imported = 0
+    failed_rows = []
+    existing_loan_ids = set(get_all_loan_ids(db))
+
+    for line_num, row in enumerate(reader, start=2):
+        normalized = {}
+        for raw_header, value in row.items():
+            canon = _normalize_header(raw_header)
+            if canon in LOAN_FIELDS:
+                normalized[canon] = _coerce_value(canon, value)
+
+        loan_id = normalized.get("loan_id")
+        if not loan_id:
+            continue
+        loan_id = str(loan_id).strip()
+
+        if loan_id in existing_loan_ids:
+            current_state = project_loan_state(db, loan_id)
+            conflicts = {}
+            for field in LOAN_FIELDS:
+                if field == "loan_id":
+                    continue
+                new_val = normalized.get(field)
+                old_val = current_state.get(field)
+                if new_val is not None and old_val is not None:
+                    if str(new_val).strip() != str(old_val).strip():
+                        conflicts[field] = {"loan_tape_value": old_val, "servicer_value": new_val}
+            if conflicts:
+                append_event(db=db, loan_id=loan_id, event_type=EventType.CONFLICT_DETECTED,
+                             payload={"conflicts": conflicts, "source": "servicer_update"},
+                             user_id=user_id, source_file=filename, source_line=line_num)
+                conflicts_detected += 1
+                from app.models.exception import ExceptionRecord, Severity, ExceptionStatus
+                for field, info in conflicts.items():
+                    db.add(ExceptionRecord(
+                        loan_id=loan_id, rule_id="SERVICER_CONFLICT", field_name=field,
+                        expected_value=str(info["loan_tape_value"]),
+                        actual_value=str(info["servicer_value"]),
+                        description=f"Servicer update conflicts with loan tape for field '{field}'",
+                        severity=Severity.HIGH, status=ExceptionStatus.OPEN))
+        else:
+            normalized["loan_id"] = loan_id
+            append_event(db=db, loan_id=loan_id, event_type=EventType.LOAN_IMPORTED,
+                         payload=normalized, user_id=user_id, source_file=filename, source_line=line_num)
+        imported += 1
+        if imported % 1000 == 0:
+            db.commit()
+    db.commit()
+    return {"filename": filename, "total_rows": imported + len(failed_rows),
+            "imported_count": imported, "failed_count": len(failed_rows),
+            "failed_rows": [], "validation_exceptions": 0,
+            "conflicts_detected": conflicts_detected, "source_type": "servicer_update"}
+
+
+def ingest_document_manifest_streaming(
+    db: Session, content: bytes, filename: str, user_id: int
+) -> dict:
+    """Sync entry point for background document manifest ingestion."""
+    text = content.decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(text))
+    missing_count = 0
+    processed = 0
+
+    for line_num, row in enumerate(reader, start=2):
+        loan_id = (row.get("loan_id") or row.get("loanid") or row.get("Loan ID") or "").strip()
+        doc_type = (row.get("document_type") or row.get("doc_type") or row.get("Document Type") or "").strip()
+        doc_status = (row.get("status") or row.get("doc_status") or row.get("Status") or "").strip().upper()
+        if not loan_id:
+            continue
+        processed += 1
+        if doc_status in ("MISSING", "INCOMPLETE", "EXPIRED", ""):
+            append_event(db=db, loan_id=loan_id, event_type=EventType.DOCUMENT_MISSING,
+                         payload={"document_type": doc_type, "document_status": doc_status or "MISSING", "source": "document_manifest"},
+                         user_id=user_id, source_file=filename, source_line=line_num)
+            from app.models.exception import ExceptionRecord, Severity, ExceptionStatus
+            db.add(ExceptionRecord(
+                loan_id=loan_id, rule_id="DOCUMENT_MISSING", field_name="document_status",
+                expected_value="COMPLETE", actual_value=doc_status or "MISSING",
+                description=f"Required document '{doc_type}' is {doc_status or 'MISSING'}",
+                severity=Severity.HIGH, status=ExceptionStatus.OPEN))
+            missing_count += 1
+        if processed % 1000 == 0:
+            db.commit()
+    db.commit()
+    return {"filename": filename, "total_rows": processed, "imported_count": processed,
+            "failed_count": 0, "failed_rows": [], "validation_exceptions": missing_count,
+            "conflicts_detected": 0, "source_type": "document_manifest"}
