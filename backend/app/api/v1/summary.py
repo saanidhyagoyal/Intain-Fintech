@@ -3,6 +3,7 @@ Dashboard Summary endpoint.
 GET /api/summary – aggregated stats for all three dashboard views.
 """
 
+from datetime import timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -36,8 +37,12 @@ async def get_summary(
     # Total events
     total_events = db.query(func.count(LoanEvent.id)).scalar() or 0
 
-    # Total exceptions
-    total_exceptions = db.query(func.count(ExceptionRecord.id)).scalar() or 0
+    # Total exceptions (only OPEN or IN_REVIEW)
+    total_exceptions = (
+        db.query(func.count(ExceptionRecord.id))
+        .filter(ExceptionRecord.status.in_([ExceptionStatus.OPEN, ExceptionStatus.IN_REVIEW]))
+        .scalar() or 0
+    )
 
     # Exceptions by severity
     severity_counts = (
@@ -66,9 +71,10 @@ async def get_summary(
         .scalar() or 0
     )
 
-    # Resolution rate
+    # Resolution rate (guard against zero-division when DB is empty)
     resolved = exceptions_by_status.get("RESOLVED", 0)
-    resolution_rate = (resolved / total_exceptions * 100) if total_exceptions > 0 else 0.0
+    total_all_exceptions = resolved + total_exceptions
+    resolution_rate = (resolved / total_all_exceptions * 100) if total_all_exceptions > 0 else 0.0
 
     # AI suggestions generated
     ai_suggestions = (
@@ -91,41 +97,44 @@ async def get_summary(
         .scalar() or 0
     )
 
-    # Recent uploads (last 10 LOAN_IMPORTED events grouped by source_file)
-    recent_uploads_query = (
-        db.query(
-            LoanEvent.source_file,
-            func.count(LoanEvent.id).label("count"),
-            func.max(LoanEvent.timestamp).label("last_upload"),
-        )
-        .filter(
-            LoanEvent.event_type == EventType.LOAN_IMPORTED,
-            LoanEvent.source_file.isnot(None),
-        )
-        .group_by(LoanEvent.source_file)
-        .order_by(func.max(LoanEvent.timestamp).desc())
+    # Recent uploads (query the FILE_UPLOADED events)
+    file_events = (
+        db.query(LoanEvent)
+        .filter(LoanEvent.event_type == EventType.FILE_UPLOADED)
+        .order_by(LoanEvent.timestamp.desc())
         .limit(10)
         .all()
     )
-    recent_uploads = [
-        {
-            "filename": r[0],
-            "records": r[1],
-            "uploaded_at": r[2].isoformat() if r[2] else None,
-        }
-        for r in recent_uploads_query
-    ]
+    
+    import json
+    recent_uploads = []
+    for ev in file_events:
+        try:
+            payload = json.loads(ev.payload_json)
+        except Exception:
+            payload = {}
+            
+        recent_uploads.append({
+            "filename": ev.source_file,
+            "records": payload.get("total_rows", 0),
+            "exceptions": payload.get("exceptions", 0),
+            "uploaded_at": ev.timestamp.replace(tzinfo=timezone.utc).isoformat() if ev.timestamp else None,
+        })
 
     # Data quality score (% of loans without unresolved exceptions)
+    # Uses DISTINCT loan_id count – NOT raw exception count
     loans_with_open_exceptions = (
         db.query(func.count(func.distinct(ExceptionRecord.loan_id)))
         .filter(ExceptionRecord.status != ExceptionStatus.RESOLVED)
         .scalar() or 0
     )
+
+    # Clean rows = loans with zero open/in_review exceptions
+    clean_rows = max(0, total_loans - loans_with_open_exceptions)
+
+    # Zero-division guard: when DB is empty (e.g., after RESET_DB_ON_STARTUP)
     data_quality_score = (
-        ((total_loans - loans_with_open_exceptions) / total_loans * 100)
-        if total_loans > 0
-        else 100.0
+        (clean_rows / total_loans * 100) if total_loans > 0 else 100.0
     )
 
     return SummaryResponse(
@@ -141,4 +150,7 @@ async def get_summary(
         self_healing_rules=self_healing_rules,
         recent_uploads=recent_uploads,
         data_quality_score=round(data_quality_score, 1),
+        clean_rows=clean_rows,
+        loans_with_open_exceptions=loans_with_open_exceptions,
     )
+

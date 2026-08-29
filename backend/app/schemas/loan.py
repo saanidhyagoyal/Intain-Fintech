@@ -103,3 +103,4 @@ class IngestionResult(BaseModel):
     validation_exceptions: int = 0
     conflicts_detected: int = 0
     source_type: str = "loan_tape"  # or "servicer_update", "document_manifest"
+    skipped_reason: Optional[str] = None

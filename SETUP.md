@@ -1,108 +1,67 @@
-# Intain Copilot - Project Setup Guide
+# Setup Guide: Loan Data Verification Copilot
 
-Welcome to the Loan Data Verification Copilot! This guide provides step-by-step instructions to get the backend and frontend up and running on a fresh system.
+This guide outlines the steps to set up and run the Loan Data Verification Copilot on a fresh machine.
 
 ## Prerequisites
-Before you begin, ensure you have the following installed on your machine:
-*   **Python 3.9+** (For the FastAPI backend)
-*   **Node.js 18+ & npm** (For the React/Vite frontend)
-*   **Git** (To clone the repository)
+* **Python 3.10+**
+* **Node.js 18+**
+* **npm** or **yarn**
 
----
+## 1. Backend Setup (FastAPI)
 
-## 1. Clone the Repository
+1. **Navigate to the backend directory:**
+   ```bash
+   cd backend
+   ```
 
-Open your terminal and clone the project:
+2. **Create and activate a virtual environment:**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows use: venv\Scripts\activate
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+   *(If `requirements.txt` is missing, install the core dependencies manually: `pip install fastapi uvicorn sqlalchemy pydantic python-multipart python-jose passlib bcrypt`)*
+
+4. **Initialize the Database & Start the Server:**
+   The SQLite database (`loan_copilot.db`) will be automatically created on startup.
+   ```bash
+   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   ```
+   The backend API will be available at `http://localhost:8000/api`. The interactive Swagger documentation will be at `http://localhost:8000/docs`.
+
+## 2. Frontend Setup (React/Tailwind)
+
+1. **Navigate to the frontend directory:**
+   ```bash
+   cd frontend
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Start the Development Server:**
+   ```bash
+   npm run dev
+   ```
+   The frontend will be available at `http://localhost:5173`.
+
+## 3. Demo Credentials
+The system initializes with four mock users, one for each role:
+* **Master Admin:** `admin` / `admin123`
+* **Data Operator:** `operator` / `operator123`
+* **Data Reviewer:** `reviewer` / `reviewer123`
+* **Data Consumer:** `consumer` / `consumer123`
+
+## 4. End-to-End Testing (Optional)
+To verify the entire event-sourced architecture and ingestion pipeline, run the comprehensive E2E test script located in the root directory:
 ```bash
-git clone <your-repository-url>
-cd Intain
+# Ensure the backend server is running on port 8000
+source backend/venv/bin/activate
+python3 test_e2e_pipeline.py
 ```
-
----
-
-## 2. Backend Setup (FastAPI)
-
-The backend uses Python and requires a virtual environment to manage dependencies.
-
-### Step 2.1: Create and Activate a Virtual Environment
-Navigate to the backend directory and create a virtual environment:
-```bash
-cd backend
-python -m venv venv
-```
-
-Activate the virtual environment:
-*   **Mac/Linux:**
-    ```bash
-    source venv/bin/activate
-    ```
-*   **Windows:**
-    ```bash
-    venv\Scripts\activate
-    ```
-
-### Step 2.2: Install Dependencies
-With the virtual environment activated, install the required Python packages:
-```bash
-pip install -r requirements.txt
-```
-
-### Step 2.3: Environment Variables
-Create a `.env` file in the root `Intain/` directory (one level up from `backend/`) if it doesn't already exist. You must provide your own API keys for the Generative AI features to work.
-
-```env
-# Intain/.env
-DATABASE_URL=sqlite:///./loan_copilot.db
-GEMINI_API_KEY=your_gemini_api_key_here
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-SECRET_KEY=dev_secret_key_12345
-```
-
-### Step 2.4: Start the Backend Server
-Run the FastAPI development server using Uvicorn. *(Ensure you are in the `backend/` directory and your virtual environment is active).*
-
-```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-> [!NOTE]
-> Upon starting for the first time, the backend will automatically generate the `loan_copilot.db` SQLite database and seed it with the default demo users.
-
-The backend is now running at: **http://localhost:8000**
-API Documentation (Swagger UI) is available at: **http://localhost:8000/docs**
-
----
-
-## 3. Frontend Setup (React + Vite)
-
-Open a **new terminal window** (leave the backend running) and navigate to the frontend directory from the project root.
-
-### Step 3.1: Install Node Modules
-```bash
-cd frontend
-npm install
-```
-
-### Step 3.2: Start the Frontend Server
-Start the Vite development server:
-```bash
-npm run dev
-```
-
-The frontend is now running at: **http://localhost:5173**
-
----
-
-## 4. Using the Platform
-
-Once both servers are running, open your browser and navigate to **http://localhost:5173**. 
-
-You will be presented with the Enterprise Login screen. For demonstration purposes, you can use the **Quick Login** buttons at the bottom of the login card, or manually enter the following seeded credentials:
-
-*   **Master Admin:** Username: `admin` | Password: `admin123`
-*   **Data Operator:** Username: `operator` | Password: `operator123`
-*   **Data Reviewer:** Username: `reviewer` | Password: `reviewer123`
-*   **Data Consumer:** Username: `consumer` | Password: `consumer123`
-
-### Next Steps:
-Log in as the **Data Operator** (or Admin) to upload your first CSV file (`loan_tape.csv`) and begin the verification process!

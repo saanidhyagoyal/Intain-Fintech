@@ -16,12 +16,22 @@ _connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     _connect_args = {"check_same_thread": False}
 
+from sqlalchemy import create_engine, event
+
 engine = create_engine(
     settings.DATABASE_URL,
     connect_args=_connect_args,
     echo=settings.DEBUG,
     pool_pre_ping=True,
 )
+
+if settings.DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.close()
 
 # ── Session ───────────────────────────────────────────────────
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

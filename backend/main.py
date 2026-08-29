@@ -6,6 +6,7 @@ seeds default users, and mounts all API routers.
 """
 
 import hashlib
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -18,12 +19,16 @@ from app.models import ExceptionRecord, LoanEvent, User, ValidationRule  # noqa:
 from app.api.router import api_router
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 # ── Lifespan (startup / shutdown) ────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Create tables and seed default users on startup."""
+    if settings.RESET_DB_ON_STARTUP:
+        Base.metadata.drop_all(bind=engine)
+        logger.warning("🗑️ Database reset: all tables dropped (RESET_DB_ON_STARTUP=True)")
     Base.metadata.create_all(bind=engine)
     _seed_users()
     yield

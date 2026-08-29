@@ -2,59 +2,27 @@
 Upload / Ingestion endpoints.
 POST /api/ingest/upload – accepts CSV files (loan_tape, servicer_update, document_manifest).
 
-Supports background processing for large files (1M+ rows) to avoid HTTP timeouts.
+Routes all uploads to the hardened streaming ingestion functions which include:
+- try/except crash guards per row
+- source-file dedup guards
+- within-file dedup
+- blank-row filtering
+- dirty data sanitization (currency, rate, null sentinels)
 """
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Query
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db, SessionLocal
+from app.core.database import get_db
 from app.core.security import UserRole, get_current_user, require_role
 from app.schemas.loan import IngestionResult
 from app.services.ingestion import (
-    ingest_document_manifest,
-    ingest_loan_tape,
-    ingest_servicer_update,
+    ingest_loan_tape_streaming,
+    ingest_servicer_update_streaming,
+    ingest_document_manifest_streaming,
 )
 
 router = APIRouter()
-
-
-def _run_ingestion_background(content: bytes, filename: str, source_type: str, user_id: int):
-    """Run ingestion in a background thread with its own DB session."""
-    db = SessionLocal()
-    try:
-        import io
-        if source_type == "servicer_update":
-            ingest_servicer_update_sync(db, content, filename, user_id)
-        elif source_type == "document_manifest":
-            ingest_document_manifest_sync(db, content, filename, user_id)
-        else:
-            ingest_loan_tape_sync(db, content, filename, user_id)
-    finally:
-        db.close()
-
-
-def ingest_loan_tape_sync(db: Session, content: bytes, filename: str, user_id: int):
-    """Synchronous wrapper for background task."""
-    import asyncio
-    from fastapi import UploadFile as _UP
-    import io
-
-    from app.services.ingestion import ingest_loan_tape as _ingest
-    # For background tasks, call the streaming version directly
-    from app.services.ingestion import ingest_loan_tape_streaming
-    ingest_loan_tape_streaming(db, content, filename, user_id)
-
-
-def ingest_servicer_update_sync(db: Session, content: bytes, filename: str, user_id: int):
-    from app.services.ingestion import ingest_servicer_update_streaming
-    ingest_servicer_update_streaming(db, content, filename, user_id)
-
-
-def ingest_document_manifest_sync(db: Session, content: bytes, filename: str, user_id: int):
-    from app.services.ingestion import ingest_document_manifest_streaming
-    ingest_document_manifest_streaming(db, content, filename, user_id)
 
 
 @router.post(
@@ -70,7 +38,6 @@ async def upload_csv(
     ),
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
-    background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     """
     Upload and ingest a CSV file.
@@ -80,7 +47,8 @@ async def upload_csv(
     - **servicer_update**: Servicer updates (detects conflicts with existing data)
     - **document_manifest**: Document checklist (flags missing documents)
 
-    For files >50,000 rows, processing is done in the background.
+    All uploads use the hardened streaming parsers with crash guards,
+    dedup, and dirty-data sanitization.
     """
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(
@@ -88,15 +56,29 @@ async def upload_csv(
             detail="Only CSV files are accepted. Please upload a .csv file.",
         )
 
+    # ── Sequence Guard ──
+    # Ensure a primary loan tape is uploaded before secondary files
+    if source_type in ["servicer_update", "document_manifest"]:
+        from app.models.event import EventType, LoanEvent
+        has_loans = db.query(LoanEvent.id).filter(LoanEvent.event_type == EventType.LOAN_IMPORTED).first()
+        if not has_loans:
+            raise HTTPException(
+                status_code=400,
+                detail="Sequence Error: You must upload a primary loan_tape.csv first to establish the loan database before uploading secondary files."
+            )
+
     user_id = current_user["user_id"]
+    filename = file.filename or "upload.csv"
 
     try:
+        content = await file.read()
+
         if source_type == "servicer_update":
-            result = await ingest_servicer_update(db, file, user_id)
+            result = ingest_servicer_update_streaming(db, content, filename, user_id)
         elif source_type == "document_manifest":
-            result = await ingest_document_manifest(db, file, user_id)
+            result = ingest_document_manifest_streaming(db, content, filename, user_id)
         else:
-            result = await ingest_loan_tape(db, file, user_id)
+            result = ingest_loan_tape_streaming(db, content, filename, user_id)
     except Exception as e:
         raise HTTPException(
             status_code=500,

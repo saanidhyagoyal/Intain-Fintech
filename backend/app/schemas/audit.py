@@ -72,3 +72,5 @@ class SummaryResponse(BaseModel):
     self_healing_rules: int = 0
     recent_uploads: list[dict] = Field(default_factory=list)
     data_quality_score: float = 0.0
+    clean_rows: int = 0                      # loans with zero open exceptions
+    loans_with_open_exceptions: int = 0      # distinct loan_ids with ≥1 open exception

@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     # ── App ───────────────────────────────────────────────────
     APP_NAME: str = "Loan Data Verification Copilot"
     DEBUG: bool = True
+    RESET_DB_ON_STARTUP: bool = False  # Set True to wipe DB on every restart
 
     model_config = {
         "env_file": str(_ENV_PATH),

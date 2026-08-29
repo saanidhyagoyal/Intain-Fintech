@@ -60,7 +60,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
         {/* ─── ADMIN: Grouped Sections ─── */}
         {role === 'ADMIN' && (
           <>
-            <NavLink to="/" end className={navLinkClass}>
+            <NavLink to="/admin" end className={navLinkClass}>
               <Shield className="w-4 h-4" />
               <span className="flex-1">Master Admin</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -69,12 +69,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
             <div className="px-3 pt-4 pb-1">
               <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Operations</span>
             </div>
-            <NavLink to="/upload" className={navLinkClass}>
+            <NavLink to="/operator" end className={navLinkClass}>
               <Upload className="w-4 h-4" />
               <span className="flex-1">Ingestion Hub</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/loans" className={navLinkClass}>
+            <NavLink to="/operator/logs" className={navLinkClass}>
               <Database className="w-4 h-4" />
               <span className="flex-1">All Loans</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -83,12 +83,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
             <div className="px-3 pt-4 pb-1">
               <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Triage</span>
             </div>
-            <NavLink to="/exceptions" className={navLinkClass}>
+            <NavLink to="/reviewer" end className={navLinkClass}>
               <AlertCircle className="w-4 h-4" />
               <span className="flex-1">Exception Queue</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/self-healing" className={navLinkClass}>
+            <NavLink to="/reviewer/rules" className={navLinkClass}>
               <Cpu className="w-4 h-4" />
               <span className="flex-1">Self-Healing Rules</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -97,7 +97,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
             <div className="px-3 pt-4 pb-1">
               <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Consumer Ledger</span>
             </div>
-            <NavLink to="/verified" className={navLinkClass}>
+            <NavLink to="/consumer" end className={navLinkClass}>
               <Lock className="w-4 h-4" />
               <span className="flex-1">Verified Portfolio</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -108,12 +108,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
         {/* ─── DATA OPERATOR: Ingestion only ─── */}
         {role === 'DATA_OPERATOR' && (
           <>
-            <NavLink to="/" end className={navLinkClass}>
+            <NavLink to="/operator" end className={navLinkClass}>
               <Upload className="w-4 h-4" />
               <span className="flex-1">Ingestion Hub</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/loans" className={navLinkClass}>
+            <NavLink to="/operator/logs" className={navLinkClass}>
               <FileSearch className="w-4 h-4" />
               <span className="flex-1">Ingestion Logs</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -124,12 +124,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
         {/* ─── REVIEWER: Triage only ─── */}
         {role === 'REVIEWER' && (
           <>
-            <NavLink to="/" end className={navLinkClass}>
+            <NavLink to="/reviewer" end className={navLinkClass}>
               <AlertCircle className="w-4 h-4" />
               <span className="flex-1">Exception Queue</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/self-healing" className={navLinkClass}>
+            <NavLink to="/reviewer/rules" className={navLinkClass}>
               <Cpu className="w-4 h-4" />
               <span className="flex-1">Self-Healing Rules</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -140,12 +140,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
         {/* ─── DATA CONSUMER: Verified & Audit only ─── */}
         {role === 'DATA_CONSUMER' && (
           <>
-            <NavLink to="/" end className={navLinkClass}>
+            <NavLink to="/consumer" end className={navLinkClass}>
               <Lock className="w-4 h-4" />
               <span className="flex-1">Verified Portfolio</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/audit" className={navLinkClass}>
+            <NavLink to="/consumer/audit" className={navLinkClass}>
               <History className="w-4 h-4" />
               <span className="flex-1">Audit & Lineage</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />

@@ -1,16 +1,13 @@
-import { useState } from 'react';
 import { Users, Shield, Upload, AlertCircle, Lock } from 'lucide-react';
-import OperatorDash from './OperatorDash';
-import ReviewerDash from './ReviewerDash';
-import ConsumerDash from './ConsumerDash';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminDash() {
-  const [activeTab, setActiveTab] = useState<'operations' | 'triage' | 'ledger'>('operations');
+  const navigate = useNavigate();
 
   const TABS = [
-    { id: 'operations', label: 'Operations', sectionLabel: 'OPERATIONS', icon: <Upload className="w-4 h-4" />, desc: 'Ingestion & Pipeline' },
-    { id: 'triage', label: 'Triage', sectionLabel: 'TRIAGE', icon: <AlertCircle className="w-4 h-4" />, desc: 'Exceptions & AI' },
-    { id: 'ledger', label: 'Consumer Ledger', sectionLabel: 'CONSUMER LEDGER', icon: <Lock className="w-4 h-4" />, desc: 'Verified & Audit' },
+    { id: 'operations', path: '/operator', label: 'Operations', sectionLabel: 'OPERATIONS', icon: <Upload className="w-4 h-4" />, desc: 'Ingestion & Pipeline' },
+    { id: 'triage', path: '/reviewer', label: 'Triage', sectionLabel: 'TRIAGE', icon: <AlertCircle className="w-4 h-4" />, desc: 'Exceptions & AI' },
+    { id: 'ledger', path: '/consumer', label: 'Consumer Ledger', sectionLabel: 'CONSUMER LEDGER', icon: <Lock className="w-4 h-4" />, desc: 'Verified & Audit' },
   ] as const;
 
   return (
@@ -31,32 +28,24 @@ export default function AdminDash() {
         </div>
       </div>
 
-      {/* Section Tabs */}
-      <div className="flex space-x-2 bg-surface-900/60 p-1.5 rounded-xl border border-surface-700/50 w-full">
+      {/* Section Jump Links */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {TABS.map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-              activeTab === tab.id
-                ? 'bg-surface-800 text-brand-400 shadow-sm border border-surface-700/50'
-                : 'text-surface-400 hover:text-surface-200 hover:bg-surface-800/50'
-            }`}
+            onClick={() => navigate(tab.path)}
+            className="glass-card p-6 flex flex-col items-center justify-center gap-3 hover:border-brand-500/50 transition-colors text-center"
           >
-            {tab.icon}
-            <div className="text-left">
-              <div className="text-[10px] uppercase tracking-wider text-surface-500">[{tab.sectionLabel}]</div>
-              <div>{tab.label}</div>
+            <div className="p-4 bg-surface-800 rounded-full text-brand-400">
+              {tab.icon}
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-surface-500 mb-1">[{tab.sectionLabel}]</div>
+              <div className="font-semibold text-surface-100">{tab.label}</div>
+              <div className="text-xs text-surface-400 mt-1">{tab.desc}</div>
             </div>
           </button>
         ))}
-      </div>
-
-      {/* Content Area */}
-      <div className="pt-2 animate-fade-in">
-        {activeTab === 'operations' && <OperatorDash />}
-        {activeTab === 'triage' && <ReviewerDash />}
-        {activeTab === 'ledger' && <ConsumerDash />}
       </div>
     </div>
   );

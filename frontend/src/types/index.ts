@@ -199,6 +199,8 @@ export interface SummaryResponse {
     uploaded_at: string | null;
   }>;
   data_quality_score: number;
+  clean_rows: number;
+  loans_with_open_exceptions: number;
 }
 
 // ── Ingestion ────────────────────────────────────────────────
