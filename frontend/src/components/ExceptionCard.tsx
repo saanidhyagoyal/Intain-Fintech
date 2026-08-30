@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, ChevronDown, ChevronUp, Edit3, X } from 'lucide-react';
+import { CheckCircle, ChevronDown, ChevronUp, Edit3, X, RotateCcw } from 'lucide-react';
 import api from '../api/client';
 import AIPanel from './AIPanel';
 import type { ExceptionRecord as ExcType, AISuggestion } from '../types';
@@ -66,6 +66,19 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
     setResolving(false);
   };
 
+  const [undoing, setUndoing] = useState(false);
+
+  const undoResolve = async () => {
+    setUndoing(true);
+    try {
+      await api.patch(`/exceptions/${exception.id}/reopen`);
+      onResolve?.();
+    } catch {
+      alert("Failed to undo resolution.");
+    }
+    setUndoing(false);
+  };
+
   const sev = severityConfig[exception.severity] || severityConfig.MEDIUM;
   const stat = statusConfig[exception.status] || statusConfig.OPEN;
 
@@ -128,12 +141,22 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
 
           {/* Resolved info */}
           {exception.status === 'RESOLVED' && (
-            <div className="flex items-center gap-2 text-success-400 bg-success-500/10 border border-success-500/20 rounded-xl p-3 mt-4">
-              <CheckCircle className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                Resolved ({exception.resolution_type})
-                {exception.reviewer_comment && <span className="text-surface-300 ml-1 font-normal">— "{exception.reviewer_comment}"</span>}
-              </span>
+            <div className="flex items-center justify-between bg-success-500/10 border border-success-500/20 rounded-xl p-3 mt-4">
+              <div className="flex items-center gap-2 text-success-400">
+                <CheckCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  Resolved ({exception.resolution_type})
+                  {exception.reviewer_comment && <span className="text-surface-300 ml-1 font-normal">— "{exception.reviewer_comment}"</span>}
+                </span>
+              </div>
+              <button
+                onClick={undoResolve}
+                disabled={undoing}
+                className="btn-ghost text-xs px-2 py-1 flex items-center gap-1.5 text-surface-400 hover:text-surface-200 hover:bg-surface-800"
+              >
+                <RotateCcw className={`w-3.5 h-3.5 ${undoing ? 'animate-spin' : ''}`} />
+                {undoing ? 'Undoing...' : 'Undo'}
+              </button>
             </div>
           )}
         </div>

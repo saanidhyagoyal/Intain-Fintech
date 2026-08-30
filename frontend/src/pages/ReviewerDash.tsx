@@ -56,7 +56,7 @@ export default function ReviewerDash() {
       const [excRes, sumRes, verRes] = await Promise.all([
         api.get(url),
         api.get('/summary'),
-        api.get('/verified-loans?page_size=50')
+        api.get(`/verified-loans?page_size=200${searchLoanId ? `&loan_id=${searchLoanId}` : ''}`)
       ]);
       setExceptions(excRes.data.exceptions);
       setSummary(sumRes.data);
@@ -70,10 +70,12 @@ export default function ReviewerDash() {
       fetchData();
     }, 400);
     return () => clearTimeout(timer);
-  }, [filterSeverity, filterStatus, searchLoanId]);
+  }, [filterSeverity, filterStatus, searchLoanId, isApprovedTab]);
 
-  // The backend already filters the results, so filteredExceptions is just exceptions
-  const filteredExceptions = exceptions;
+  // The Single Pipeline
+  const filteredExceptions = exceptions.filter(e => 
+    !searchLoanId || e.loan_id.toLowerCase().includes(searchLoanId.toLowerCase())
+  );
 
   const groupedExceptions = filteredExceptions.reduce((acc, curr) => {
     acc[curr.loan_id] = acc[curr.loan_id] || [];

@@ -54,7 +54,7 @@ async def list_exceptions(
 
     total = query.count()
     exceptions = (
-        query.order_by(ExceptionRecord.created_at.desc())
+        query.order_by(ExceptionRecord.loan_id.asc(), ExceptionRecord.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
@@ -215,3 +215,41 @@ async def resolve_exception(
         resolution_type=exc.resolution_type,
         created_at=exc.created_at,
     )
+
+
+@router.patch(
+    "/exceptions/{exception_id}/reopen",
+    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
+)
+async def reopen_exception(
+    exception_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Revert a RESOLVED exception back to OPEN state."""
+    exc = db.query(ExceptionRecord).filter(ExceptionRecord.id == exception_id).first()
+    if not exc:
+        raise HTTPException(status_code=404, detail="Exception not found")
+        
+    if exc.status != ExceptionStatus.RESOLVED:
+        raise HTTPException(status_code=400, detail="Only RESOLVED exceptions can be reopened")
+
+    exc.status = ExceptionStatus.OPEN
+    exc.resolved_by = None
+    exc.resolved_at = None
+    exc.resolution_type = None
+    exc.reviewer_comment = None
+
+    append_event(
+        db=db,
+        loan_id=exc.loan_id,
+        event_type=EventType.EXCEPTION_REOPENED,
+        payload={
+            "exception_id": exc.id,
+            "reason": "Reviewer reverted resolution"
+        },
+        user_id=current_user["user_id"],
+    )
+    
+    db.commit()
+    return {"message": "Exception reopened successfully"}

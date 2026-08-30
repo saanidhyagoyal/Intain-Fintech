@@ -10,6 +10,7 @@ import csv
 import io
 import json
 from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -34,6 +35,7 @@ router = APIRouter()
 
 @router.get("/verified-loans", response_model=VerifiedLoanListResponse)
 async def list_verified_loans(
+    loan_id: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -57,6 +59,10 @@ async def list_verified_loans(
     revoked_ids = {row[0] for row in revoked_ids_query}
     
     verified_loan_ids = [v[0] for v in verified_ids if v[0] not in revoked_ids]
+    
+    if loan_id:
+        verified_loan_ids = [v for v in verified_loan_ids if loan_id.lower() in v.lower()]
+        
     total = len(verified_loan_ids)
 
     # Paginate
