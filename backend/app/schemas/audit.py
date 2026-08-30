@@ -17,6 +17,7 @@ class EventResponse(BaseModel):
     payload: dict
     timestamp: datetime
     user_id: Optional[int] = None
+    username: Optional[str] = None
     event_hash: str
     source_file: Optional[str] = None
     source_line: Optional[int] = None

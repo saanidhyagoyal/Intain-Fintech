@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.core.cryptography import compute_record_hash
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.models.user import User
 from app.schemas.audit import (
     AuditTrailResponse,
     EventResponse,
@@ -29,7 +30,7 @@ from app.services.event_store import (
 router = APIRouter()
 
 
-@router.get("/{loan_id}", response_model=AuditTrailResponse)
+@router.get("/loans/{loan_id}", response_model=AuditTrailResponse)
 async def get_audit_trail(
     loan_id: str,
     db: Session = Depends(get_db),
@@ -47,6 +48,11 @@ async def get_audit_trail(
             detail=f"No events found for loan {loan_id}",
         )
 
+    # Fetch usernames
+    user_ids = {e.user_id for e in events if e.user_id}
+    users = db.query(User).filter(User.id.in_(user_ids)).all() if user_ids else []
+    username_map = {u.id: u.username for u in users}
+
     event_responses = []
     for e in events:
         try:
@@ -62,6 +68,7 @@ async def get_audit_trail(
                 payload=payload,
                 timestamp=e.timestamp,
                 user_id=e.user_id,
+                username=username_map.get(e.user_id) if e.user_id else None,
                 event_hash=e.event_hash,
                 source_file=e.source_file,
                 source_line=e.source_line,

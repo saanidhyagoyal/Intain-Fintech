@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AlertCircle, Filter, Bot, CheckCircle, Sparkles, RefreshCw, Search, Cpu, Zap, Eye, ShieldCheck, Rocket, Hash, Shield, XCircle, AlertTriangle, X } from 'lucide-react';
+import { AlertCircle, Filter, Bot, CheckCircle, Sparkles, RefreshCw, Search, Cpu, Zap, Eye, ShieldCheck, Rocket, Hash, Shield, XCircle, AlertTriangle, X, RotateCcw } from 'lucide-react';
 import api from '../api/client';
 import ExceptionCard from '../components/ExceptionCard';
 import StatsCard from '../components/StatsCard';
 import AuditTimeline from '../components/AuditTimeline';
+import ReasonModal from '../components/ReasonModal';
 import type { ExceptionRecord, SummaryResponse, LoanEvent, VerifiedLoanResponse } from '../types';
 
 export default function ReviewerDash() {
@@ -18,6 +19,7 @@ export default function ReviewerDash() {
   const location = useLocation();
   const isApprovedTab = location.pathname.includes('/approved');
   const [verifiedLoansList, setVerifiedLoansList] = useState<VerifiedLoanResponse[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   // Audit trail state
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
@@ -39,6 +41,11 @@ export default function ReviewerDash() {
 
   // Reject state
   const [rejecting, setRejecting] = useState<string | null>(null);
+  const [loanToReject, setLoanToReject] = useState<string | null>(null);
+
+  // Return Loan state
+  const [returning, setReturning] = useState<string | null>(null);
+  const [loanToReturn, setLoanToReturn] = useState<string | null>(null);
 
   // Revoke state
   const [revokingLoan, setRevokingLoan] = useState<string | null>(null);
@@ -130,17 +137,32 @@ export default function ReviewerDash() {
     setVerifying(false);
   };
 
-  const rejectLoan = async (loanId: string) => {
-    if (!window.confirm(`Are you sure you want to reject loan ${loanId}? This action cannot be undone.`)) return;
-    setRejecting(loanId);
+  const submitReject = async (reason: string) => {
+    if (!loanToReject) return;
+    setRejecting(loanToReject);
     try {
-      await api.post(`/loans/${loanId}/reject`);
-      setExceptions(prev => prev.filter(e => e.loan_id !== loanId));
-      alert(`✅ Loan ${loanId} rejected and removed from pipeline.`);
+      await api.post(`/loans/${loanToReject}/reject`, { reason });
+      setExceptions(prev => prev.filter(e => e.loan_id !== loanToReject));
+      alert(`✅ Loan ${loanToReject} rejected and removed from pipeline.`);
     } catch (err) {
       alert("Failed to reject loan.");
     }
     setRejecting(null);
+    setLoanToReject(null);
+  };
+
+  const submitReturn = async (reason: string) => {
+    if (!loanToReturn) return;
+    setReturning(loanToReturn);
+    try {
+      await api.post(`/loans/${loanToReturn}/return`, { reason });
+      fetchData();
+      alert(`✅ Loan ${loanToReturn} returned for rework.`);
+    } catch (err) {
+      alert("Failed to return loan.");
+    }
+    setReturning(null);
+    setLoanToReturn(null);
   };
 
   const submitRevoke = async () => {
@@ -464,8 +486,18 @@ export default function ReviewerDash() {
                     </button>
                     
                     <div className="ml-auto flex items-center gap-3">
+                      {loanExceptions.some(e => e.status === 'RESOLVED' && e.resolved_by && e.resolved_by !== currentUser.user_id) && (
+                        <button
+                          onClick={() => setLoanToReturn(loanId)}
+                          disabled={returning === loanId}
+                          className="btn-ghost text-xs px-4 py-1.5 text-warning-400 hover:bg-warning-500/10"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          {returning === loanId ? 'Returning...' : 'Return Loan'}
+                        </button>
+                      )}
                       <button
-                        onClick={() => rejectLoan(loanId)}
+                        onClick={() => setLoanToReject(loanId)}
                         disabled={rejecting === loanId}
                         className="btn-ghost text-xs px-4 py-1.5 text-danger-400 hover:bg-danger-500/10"
                       >
@@ -480,6 +512,10 @@ export default function ReviewerDash() {
                           <div className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium text-success-400 bg-success-500/10 rounded-lg border border-success-500/20">
                             <CheckCircle className="w-3.5 h-3.5" />
                             Verified
+                          </div>
+                        ) : loanExceptions.some(e => e.resolved_by === currentUser.user_id) ? (
+                          <div className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium text-surface-400 bg-surface-800/50 rounded-lg border border-surface-700/50">
+                            ⏳ Awaiting Peer Verification
                           </div>
                         ) : (
                           <button
@@ -575,6 +611,26 @@ export default function ReviewerDash() {
           </div>
         </div>
       )}
+
+      {/* Reject Modal */}
+      <ReasonModal
+        isOpen={!!loanToReject}
+        onClose={() => !rejecting && setLoanToReject(null)}
+        onSubmit={submitReject}
+        title={`Reject Loan ${loanToReject}`}
+        placeholder="Reason for rejecting this loan..."
+        loading={!!rejecting}
+      />
+
+      {/* Return Loan Modal */}
+      <ReasonModal
+        isOpen={!!loanToReturn}
+        onClose={() => !returning && setLoanToReturn(null)}
+        onSubmit={submitReturn}
+        title={`Return Loan ${loanToReturn}`}
+        placeholder="Reason for returning this loan to the Maker..."
+        loading={!!returning}
+      />
     </div>
   );
 }

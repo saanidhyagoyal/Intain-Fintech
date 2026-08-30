@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     SEED_OPERATOR_PASS: str = "operator123"
     SEED_REVIEWER_USER: str = "reviewer"
     SEED_REVIEWER_PASS: str = "reviewer123"
+    REVIEWER_A_USERNAME: str = "reviewer_a"
+    REVIEWER_A_PASSWORD: str = "demo_password"
+    REVIEWER_B_USERNAME: str = "reviewer_b"
+    REVIEWER_B_PASSWORD: str = "demo_password"
     SEED_CONSUMER_USER: str = "consumer"
     SEED_CONSUMER_PASS: str = "consumer123"
 

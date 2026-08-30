@@ -92,6 +92,11 @@ export default function Sidebar({ role, username }: SidebarProps) {
               <span className="flex-1">Approved Portfolio</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
+            <NavLink to="/audit" className={navLinkClass}>
+              <History className="w-4 h-4" />
+              <span className="flex-1">Audit Trail</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
 
             <div className="px-3 pt-4 pb-1">
               <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Consumer Ledger</span>
@@ -138,6 +143,11 @@ export default function Sidebar({ role, username }: SidebarProps) {
               <span className="flex-1">Approved Portfolio</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
+            <NavLink to="/audit" className={navLinkClass}>
+              <History className="w-4 h-4" />
+              <span className="flex-1">Audit Trail</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
           </>
         )}
 
@@ -152,6 +162,11 @@ export default function Sidebar({ role, username }: SidebarProps) {
             <NavLink to="/validation" className={navLinkClass}>
               <Shield className="w-4 h-4" />
               <span className="flex-1">Crypto Validation</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+            <NavLink to="/audit" className={navLinkClass}>
+              <History className="w-4 h-4" />
+              <span className="flex-1">Audit Trail</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
           </>

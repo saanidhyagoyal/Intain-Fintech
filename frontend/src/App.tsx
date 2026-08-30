@@ -6,6 +6,7 @@ import ReviewerDash from './pages/ReviewerDash';
 import ConsumerDash from './pages/ConsumerDash';
 import LoanDetail from './pages/LoanDetail';
 import AdminDash from './pages/AdminDash';
+import AuditTrailDash from './pages/AuditTrailDash';
 
 function getUser() {
   try {
@@ -77,6 +78,9 @@ export default function App() {
           {/* Consumer routes */}
           <Route path="/verified" element={<RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}><ConsumerDash /></RoleGuard>} />
           <Route path="/validation" element={<RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}><ConsumerDash /></RoleGuard>} />
+
+          {/* Audit routes */}
+          <Route path="/audit" element={<RoleGuard allowed={['ADMIN', 'REVIEWER', 'DATA_CONSUMER']}><AuditTrailDash /></RoleGuard>} />
 
           {/* Fallback routes */}
           <Route path="/loans/:loanId" element={<LoanDetail />} />

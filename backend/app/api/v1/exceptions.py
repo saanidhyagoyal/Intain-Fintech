@@ -20,6 +20,7 @@ from app.schemas.exception import (
     ExceptionResolveRequest,
     ExceptionResponse,
 )
+from pydantic import BaseModel
 from app.services.event_store import append_event, project_loan_state
 
 router = APIRouter()
@@ -217,16 +218,20 @@ async def resolve_exception(
     )
 
 
+class ReworkRequest(BaseModel):
+    reason: str
+
 @router.patch(
-    "/exceptions/{exception_id}/reopen",
+    "/exceptions/{exception_id}/return",
     dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
 )
-async def reopen_exception(
+async def return_exception(
     exception_id: int,
+    req: ReworkRequest,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    """Revert a RESOLVED exception back to OPEN state."""
+    """Return a RESOLVED exception back to OPEN state for rework. Accepts JSON body."""
     exc = db.query(ExceptionRecord).filter(ExceptionRecord.id == exception_id).first()
     if not exc:
         raise HTTPException(status_code=404, detail="Exception not found")
@@ -234,6 +239,7 @@ async def reopen_exception(
     if exc.status != ExceptionStatus.RESOLVED:
         raise HTTPException(status_code=400, detail="Only RESOLVED exceptions can be reopened")
 
+    # Reset state explicitly to OPEN
     exc.status = ExceptionStatus.OPEN
     exc.resolved_by = None
     exc.resolved_at = None
@@ -243,10 +249,10 @@ async def reopen_exception(
     append_event(
         db=db,
         loan_id=exc.loan_id,
-        event_type=EventType.EXCEPTION_REOPENED,
+        event_type=EventType.EXCEPTION_RETURNED,
         payload={
             "exception_id": exc.id,
-            "reason": "Reviewer reverted resolution"
+            "reason": req.reason
         },
         user_id=current_user["user_id"],
     )

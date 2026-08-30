@@ -82,6 +82,7 @@ export interface LoanEvent {
   payload: Record<string, unknown>;
   timestamp: string;
   user_id: number | null;
+  username?: string;
   event_hash: string;
   source_file: string | null;
   source_line: number | null;

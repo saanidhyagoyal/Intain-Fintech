@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CheckCircle, ChevronDown, ChevronUp, Edit3, X, RotateCcw } from 'lucide-react';
 import api from '../api/client';
 import AIPanel from './AIPanel';
+import ReasonModal from './ReasonModal';
 import type { ExceptionRecord as ExcType, AISuggestion } from '../types';
 
 interface ExceptionCardProps {
@@ -20,6 +21,12 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
   // Manual Resolution Modal State
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualValue, setManualValue] = useState('');
+
+  // Rework Modal State
+  const [showReworkModal, setShowReworkModal] = useState(false);
+  const [isReturning, setIsReturning] = useState(false);
+
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   const severityConfig: Record<string, { class: string; icon: string }> = {
     CRITICAL: { class: 'badge-critical', icon: '🔴' },
@@ -77,6 +84,18 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
       alert("Failed to undo resolution.");
     }
     setUndoing(false);
+  };
+
+  const returnRework = async (reason: string) => {
+    setIsReturning(true);
+    try {
+      await api.patch(`/exceptions/${exception.id}/return`, { reason });
+      setShowReworkModal(false);
+      onResolve?.();
+    } catch {
+      alert("Failed to return exception for rework.");
+    }
+    setIsReturning(false);
   };
 
   const sev = severityConfig[exception.severity] || severityConfig.MEDIUM;
@@ -149,14 +168,25 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
                   {exception.reviewer_comment && <span className="text-surface-300 ml-1 font-normal">— "{exception.reviewer_comment}"</span>}
                 </span>
               </div>
-              <button
-                onClick={undoResolve}
-                disabled={undoing}
-                className="btn-ghost text-xs px-2 py-1 flex items-center gap-1.5 text-surface-400 hover:text-surface-200 hover:bg-surface-800"
-              >
-                <RotateCcw className={`w-3.5 h-3.5 ${undoing ? 'animate-spin' : ''}`} />
-                {undoing ? 'Undoing...' : 'Undo'}
-              </button>
+              <div className="flex gap-2">
+                {currentUser.user_id !== exception.resolved_by && (
+                  <button
+                    onClick={() => setShowReworkModal(true)}
+                    disabled={undoing || isReturning}
+                    className="btn-ghost text-xs px-2 py-1 flex items-center gap-1.5 text-warning-400 hover:text-warning-300 hover:bg-warning-500/10 border border-warning-500/20"
+                  >
+                    Return for Rework
+                  </button>
+                )}
+                <button
+                  onClick={undoResolve}
+                  disabled={undoing}
+                  className="btn-ghost text-xs px-2 py-1 flex items-center gap-1.5 text-surface-400 hover:text-surface-200 hover:bg-surface-800"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${undoing ? 'animate-spin' : ''}`} />
+                  {undoing ? 'Undoing...' : 'Undo'}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -230,6 +260,16 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
           </div>
         </div>
       )}
+
+      {/* Rework Modal */}
+      <ReasonModal
+        isOpen={showReworkModal}
+        onClose={() => setShowReworkModal(false)}
+        onSubmit={returnRework}
+        title="Return for Rework"
+        placeholder="Explain why this resolution is incorrect..."
+        loading={isReturning}
+      />
     </div>
   );
 }

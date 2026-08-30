@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, GitBranch, Hash, Shield, Upload, Bot, User, AlertTriangle, FileWarning, Cog } from 'lucide-react';
+import { Clock, GitBranch, Hash, Shield, Upload, Bot, User, AlertTriangle, FileWarning, Cog, CheckCircle } from 'lucide-react';
 import type { LoanEvent, EventType } from '../types';
 
 interface AuditTimelineProps {
@@ -19,6 +19,9 @@ const EVENT_CONFIG: Record<EventType, { icon: React.ReactNode; color: string; la
   CONFLICT_DETECTED:    { icon: <FileWarning className="w-3.5 h-3.5" />,   color: 'bg-warning-500', label: 'Conflict' },
   DOCUMENT_MISSING:     { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'bg-warning-500', label: 'Doc Missing' },
   RULE_GENERATED:       { icon: <Cog className="w-3.5 h-3.5" />,           color: 'bg-brand-500',   label: 'Rule Generated' },
+  EXCEPTION_RETURNED:   { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'bg-warning-500', label: 'Returned for Rework' },
+  EXCEPTION_RESOLVED:   { icon: <CheckCircle className="w-3.5 h-3.5" />,   color: 'bg-success-500', label: 'Exception Resolved' },
+  LOAN_REJECTED:        { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'bg-danger-500',  label: 'Loan Rejected' },
 };
 
 export default function AuditTimeline({ events, hashChainValid, onRewind }: AuditTimelineProps) {
@@ -159,17 +162,23 @@ export default function AuditTimeline({ events, hashChainValid, onRewind }: Audi
                     {new Date(event.timestamp).toLocaleString()}
                   </span>
                 </div>
-                <div className={`mt-2 text-xs font-mono truncate max-w-md p-2 rounded-md ${
-                  dimmed ? 'bg-danger-950/30 text-danger-500/50' : 'bg-surface-900/50 text-surface-400'
-                }`}>
-                  <Hash className="w-3 h-3 inline mr-1 opacity-50" />
-                  {event.event_hash.slice(0, 16)}...
-                  {event.source_file && (
-                    <span className="ml-2 opacity-70">
-                      [{event.source_file}:{event.source_line}]
-                    </span>
-                  )}
-                </div>
+                {(event.payload?.reason || event.username || event.payload?.resolved_by || event.payload?.rejected_by || event.payload?.verified_by) && (
+                  <div className={`mt-2 text-xs font-mono truncate max-w-md p-2 rounded-md ${
+                    dimmed ? 'bg-danger-950/30 text-danger-500/50' : 'bg-surface-900/50 text-surface-400'
+                  }`}>
+                    {event.payload?.reason && (
+                      <div className="mt-1 text-warning-400 font-sans">
+                        <span className="font-semibold">Reason:</span> {event.payload.reason}
+                      </div>
+                    )}
+                    {(event.username || event.payload?.resolved_by || event.payload?.rejected_by || event.payload?.verified_by) && (
+                      <div className="mt-1 text-surface-300 font-sans">
+                        <User className="w-3 h-3 inline mr-1" />
+                        {event.username || event.payload?.resolved_by || event.payload?.rejected_by || event.payload?.verified_by}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           );

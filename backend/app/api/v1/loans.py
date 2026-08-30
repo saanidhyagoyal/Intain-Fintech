@@ -20,6 +20,12 @@ from pydantic import BaseModel
 
 class RevokeRequest(BaseModel):
     reason: str
+
+class RejectRequest(BaseModel):
+    reason: str
+
+class ReturnLoanRequest(BaseModel):
+    reason: str
 from app.services.event_store import (
     LOAN_FIELDS,
     append_event,
@@ -226,6 +232,7 @@ async def bulk_verify_clean_loans(
 )
 async def reject_loan(
     loan_id: str,
+    req: RejectRequest,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -238,11 +245,48 @@ async def reject_loan(
         db=db,
         loan_id=loan_id,
         event_type=EventType.LOAN_REJECTED,
-        payload={"reason": "Manual rejection by Reviewer", "rejected_by": current_user["username"]},
+        payload={"reason": req.reason, "rejected_by": current_user["username"]},
         user_id=current_user["user_id"],
     )
     db.commit()
     return {"message": "Loan rejected"}
+
+
+@router.post(
+    "/loans/{loan_id}/return",
+    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
+)
+async def return_loan(
+    loan_id: str,
+    req: ReturnLoanRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Return a loan for rework. Reopens all exceptions resolved by a Maker."""
+    # Reopen all exceptions for this loan that are resolved
+    exceptions = (
+        db.query(ExceptionRecord)
+        .filter(ExceptionRecord.loan_id == loan_id)
+        .filter(ExceptionRecord.status == ExceptionStatus.RESOLVED)
+        .all()
+    )
+
+    for exc in exceptions:
+        exc.status = ExceptionStatus.OPEN
+        exc.resolved_by = None
+        exc.resolved_at = None
+        exc.resolution_type = None
+        exc.reviewer_comment = None
+
+    append_event(
+        db=db,
+        loan_id=loan_id,
+        event_type=EventType.EXCEPTION_RETURNED,
+        payload={"reason": req.reason, "returned_by": current_user["username"], "bulk": True},
+        user_id=current_user["user_id"],
+    )
+    db.commit()
+    return {"message": "Loan returned for rework"}
 
 
 @router.post(

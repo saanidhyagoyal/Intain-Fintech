@@ -267,6 +267,21 @@ async def verify_loan(
             detail=f"Cannot verify loan. Unresolved exception IDs: {blocking_ids}",
         )
 
+    # Peer-Review Authorization Gate (Maker/Checker)
+    makers_query = (
+        db.query(ExceptionRecord.resolved_by)
+        .filter(ExceptionRecord.loan_id == loan_id)
+        .filter(ExceptionRecord.resolved_by.isnot(None))
+        .distinct()
+    )
+    makers = [row[0] for row in makers_query.all()]
+    
+    if current_user["user_id"] in makers:
+        raise HTTPException(
+            status_code=403,
+            detail="Compliance Violation: You cannot verify a loan where you resolved the exceptions. A peer Reviewer must verify this.",
+        )
+
     # Compute canonical record hash
     canonical_data = {k: v for k, v in state.items() if k in LOAN_FIELDS}
     record_hash = compute_record_hash(canonical_data)

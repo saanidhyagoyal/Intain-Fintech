@@ -66,6 +66,22 @@ def _seed_users():
                     role=UserRole.REVIEWER,
                 ),
                 User(
+                    username=settings.REVIEWER_A_USERNAME,
+                    email=f"{settings.REVIEWER_A_USERNAME}@intain.io",
+                    hashed_password=hashlib.sha256(
+                        settings.REVIEWER_A_PASSWORD.encode()
+                    ).hexdigest(),
+                    role=UserRole.REVIEWER,
+                ),
+                User(
+                    username=settings.REVIEWER_B_USERNAME,
+                    email=f"{settings.REVIEWER_B_USERNAME}@intain.io",
+                    hashed_password=hashlib.sha256(
+                        settings.REVIEWER_B_PASSWORD.encode()
+                    ).hexdigest(),
+                    role=UserRole.REVIEWER,
+                ),
+                User(
                     username=settings.SEED_CONSUMER_USER,
                     email=f"{settings.SEED_CONSUMER_USER}@intain.io",
                     hashed_password=hashlib.sha256(
