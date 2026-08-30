@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Bot, CheckCircle, Sparkles, Terminal, ChevronDown, ChevronUp, Shield } from 'lucide-react';
+import { Bot, CheckCircle, Sparkles, Terminal, ChevronDown, ChevronUp, Shield, RefreshCw } from 'lucide-react';
 import type { AISuggestion } from '../types';
 
 interface AIPanelProps {
   loading: boolean;
   aiData: AISuggestion | null;
+  aiError?: boolean;
   resolving: boolean;
   comment: string;
   onCommentChange: (val: string) => void;
@@ -15,6 +16,7 @@ interface AIPanelProps {
 export default function AIPanel({
   loading,
   aiData,
+  aiError,
   resolving,
   comment,
   onCommentChange,
@@ -22,6 +24,23 @@ export default function AIPanel({
   onResolve
 }: AIPanelProps) {
   const [showTrace, setShowTrace] = useState(false);
+
+  if (aiError && !loading) {
+    return (
+      <div className="bg-danger-500/10 border border-danger-500/20 rounded-xl p-5 text-center">
+        <Bot className="w-8 h-8 text-danger-400 mx-auto mb-3" />
+        <h4 className="text-sm font-semibold text-danger-400 mb-1">AI Analysis Failed</h4>
+        <p className="text-xs text-danger-400/80 mb-4">The copilot was unable to process this exception. The model might be overloaded or the API key may be rate limited.</p>
+        <button
+          onClick={onRequestAI}
+          className="btn-primary w-full justify-center text-sm"
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Retry Analysis
+        </button>
+      </div>
+    );
+  }
 
   if (!aiData && !loading) {
     return (
@@ -72,9 +91,14 @@ export default function AIPanel({
     return (
       <div className="ai-border-glow bg-surface-900/60 rounded-xl p-5 space-y-4">
         {/* Header */}
-        <div className="flex items-center gap-2">
-          <Bot className="w-5 h-5 text-brand-400" />
-          <span className="text-sm font-semibold ai-gradient-text">Intain Copilot Suggestion</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bot className="w-5 h-5 text-brand-400" />
+            <span className="text-sm font-semibold ai-gradient-text">Intain Copilot Suggestion</span>
+          </div>
+          <div className="px-2 py-0.5 rounded text-[10px] font-mono tracking-wider font-semibold border border-brand-500/30 bg-brand-500/10 text-brand-300">
+            {aiData.model_name.toUpperCase()}
+          </div>
         </div>
 
         {/* Explanation */}
@@ -170,11 +194,18 @@ export default function AIPanel({
               Resolve Manually
             </button>
           </div>
+          <button
+            onClick={onRequestAI}
+            disabled={resolving}
+            className="btn-ghost w-full justify-center text-sm mt-2 text-brand-400 hover:text-brand-300 hover:bg-brand-500/10"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Regenerate Analysis
+          </button>
         </div>
 
         {/* Metadata Footer */}
-        <div className="flex items-center justify-between text-[10px] text-surface-600 font-mono mt-2 pt-2">
-          <span>Model: {aiData.model_name}</span>
+        <div className="flex items-center justify-end text-[10px] text-surface-600 font-mono mt-2 pt-2">
           <span>Gen: {new Date(aiData.generated_at).toISOString()}</span>
         </div>
       </div>

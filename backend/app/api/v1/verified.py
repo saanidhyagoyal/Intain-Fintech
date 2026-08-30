@@ -47,7 +47,16 @@ async def list_verified_loans(
         .distinct()
         .all()
     )
-    verified_loan_ids = [v[0] for v in verified_ids]
+    # Find revoked loans
+    revoked_ids_query = (
+        db.query(LoanEvent.loan_id)
+        .filter(LoanEvent.event_type == EventType.VERIFICATION_REVOKED)
+        .distinct()
+        .all()
+    )
+    revoked_ids = {row[0] for row in revoked_ids_query}
+    
+    verified_loan_ids = [v[0] for v in verified_ids if v[0] not in revoked_ids]
     total = len(verified_loan_ids)
 
     # Paginate
@@ -115,6 +124,15 @@ async def export_verified_loans(
         .distinct()
         .all()
     )
+    revoked_ids_query = (
+        db.query(LoanEvent.loan_id)
+        .filter(LoanEvent.event_type == EventType.VERIFICATION_REVOKED)
+        .distinct()
+        .all()
+    )
+    revoked_ids = {row[0] for row in revoked_ids_query}
+    
+    valid_verified_ids = [(v[0],) for v in verified_ids if v[0] not in revoked_ids]
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -123,7 +141,7 @@ async def export_verified_loans(
     header = LOAN_FIELDS + ["record_hash", "verified_at", "verified_by", "event_count", "hash_chain_valid"]
     writer.writerow(header)
 
-    for (loan_id,) in verified_ids:
+    for (loan_id,) in valid_verified_ids:
         state = project_loan_state(db, loan_id)
         if not state:
             continue

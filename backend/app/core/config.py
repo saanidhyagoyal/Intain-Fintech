@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     # ── AI API Keys ───────────────────────────────────────────
     GEMINI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
+    CHATGPT_API_KEY: str = ""
 
     # ── Security ──────────────────────────────────────────────
     SECRET_KEY: str = "dev_secret_key_12345"
@@ -30,6 +31,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "Loan Data Verification Copilot"
     DEBUG: bool = True
     RESET_DB_ON_STARTUP: bool = False  # Defaults to False – DB is NOT wiped on normal restarts
+    FRONTEND_URL: str = "http://localhost:5173"
+    BACKEND_URL: str = "http://localhost:8000"
 
     # ── File Upload ───────────────────────────────────────────
     UPLOAD_DIR: str = "./uploads"

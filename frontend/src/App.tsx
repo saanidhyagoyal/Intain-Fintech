@@ -66,39 +66,19 @@ export default function App() {
           {/* Default route renders role-specific dashboard */}
           <Route path="/" element={<Dashboard />} />
 
-          {/* Operator routes */}
-          <Route path="/upload" element={
-            <RoleGuard allowed={['ADMIN', 'DATA_OPERATOR']}>
-              <OperatorDash />
-            </RoleGuard>
-          } />
+          {/* Shared routes (can be caught by Dashboard or directly) */}
+          <Route path="/upload" element={<RoleGuard allowed={['ADMIN', 'DATA_OPERATOR']}><OperatorDash /></RoleGuard>} />
+          <Route path="/compliance" element={<RoleGuard allowed={['ADMIN', 'DATA_OPERATOR']}><OperatorDash /></RoleGuard>} />
 
           {/* Reviewer routes */}
-          <Route path="/exceptions" element={
-            <RoleGuard allowed={['ADMIN', 'REVIEWER']}>
-              <ReviewerDash />
-            </RoleGuard>
-          } />
-          <Route path="/self-healing" element={
-            <RoleGuard allowed={['ADMIN', 'REVIEWER']}>
-              <ReviewerDash />
-            </RoleGuard>
-          } />
+          <Route path="/exceptions" element={<RoleGuard allowed={['ADMIN', 'REVIEWER']}><ReviewerDash /></RoleGuard>} />
+          <Route path="/approved" element={<RoleGuard allowed={['ADMIN', 'REVIEWER']}><ReviewerDash /></RoleGuard>} />
 
           {/* Consumer routes */}
-          <Route path="/verified" element={
-            <RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}>
-              <ConsumerDash />
-            </RoleGuard>
-          } />
-          <Route path="/audit" element={
-            <RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}>
-              <ConsumerDash />
-            </RoleGuard>
-          } />
+          <Route path="/verified" element={<RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}><ConsumerDash /></RoleGuard>} />
+          <Route path="/validation" element={<RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}><ConsumerDash /></RoleGuard>} />
 
-          {/* Shared routes */}
-          <Route path="/loans" element={<OperatorDash />} />
+          {/* Fallback routes */}
           <Route path="/loans/:loanId" element={<LoanDetail />} />
 
           {/* Admin */}

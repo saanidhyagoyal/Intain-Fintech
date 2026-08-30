@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Upload, Database, FileText, TrendingUp, CheckCircle, AlertTriangle, FileWarning, ArrowRight } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Upload, Database, FileText, TrendingUp, CheckCircle, AlertTriangle, FileWarning, ArrowRight, Download } from 'lucide-react';
 import api from '../api/client';
 import StatsCard from '../components/StatsCard';
 import UploadZone from '../components/UploadZone';
@@ -101,22 +102,47 @@ function OperatorHub({ summary, fetchData }: { summary: SummaryResponse; fetchDa
 
 function OperatorLogs({ summary }: { summary: SummaryResponse }) {
 
+  const downloadComplianceReport = () => {
+    // Generate a simple CSV blob from the summary data
+    const csvRows = [
+      ["Metric", "Value"],
+      ["Total Loans Ingested", summary.total_loans],
+      ["Clean Rows", summary.clean_rows ?? 0],
+      ["Exceptions Flagged", summary.exceptions_by_status?.OPEN || 0],
+      ["Data Quality Score", `${summary.data_quality_score}%`]
+    ];
+    const csvString = csvRows.map(row => row.join(",")).join("\n");
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'compliance_report.csv';
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   if (summary.recent_uploads.length === 0) {
     return (
       <div className="glass-card p-12 text-center">
         <FileText className="w-12 h-12 text-surface-600 mx-auto mb-3" />
-        <h3 className="text-lg font-semibold text-surface-300">No Ingestion Logs Yet</h3>
+        <h3 className="text-lg font-semibold text-surface-300">No Compliance Logs Yet</h3>
         <p className="text-surface-500 text-sm mt-1">Upload CSVs in the Hub to see lineage history.</p>
       </div>
     );
   }
 
   return (
-    <div className="glass-card p-6">
-      <h2 className="text-lg font-semibold text-surface-100 mb-4 flex items-center gap-2">
-        <FileText className="w-5 h-5 text-brand-400" />
-        File Lineage History
-      </h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
+          <Database className="w-5 h-5 text-brand-400" />
+          Health & Compliance Logs
+        </h2>
+        <button onClick={downloadComplianceReport} className="btn-primary text-sm">
+          <Download className="w-4 h-4" />
+          Download Compliance Report
+        </button>
+      </div>
       <div className="overflow-x-auto rounded-xl">
         <table className="data-table">
           <thead>
@@ -151,6 +177,8 @@ function OperatorLogs({ summary }: { summary: SummaryResponse }) {
 export default function OperatorDash() {
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const isComplianceTab = location.pathname.includes('/compliance');
 
   const fetchData = async () => {
     setLoading(true);
@@ -193,8 +221,11 @@ export default function OperatorDash() {
         <StatsCard icon={<TrendingUp className="w-5 h-5 text-info-400" />} label="Data Quality Score" value={`${summary.data_quality_score}%`} color="info" delay={300} />
       </div>
 
-      <OperatorHub summary={summary} fetchData={fetchData} />
-      <OperatorLogs summary={summary} />
+      {isComplianceTab ? (
+        <OperatorLogs summary={summary} />
+      ) : (
+        <OperatorHub summary={summary} fetchData={fetchData} />
+      )}
     </div>
   );
 }

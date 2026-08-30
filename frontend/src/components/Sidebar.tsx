@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Upload, AlertCircle, Shield, Database,
-  LogOut, ChevronRight, Sparkles, FileSearch, Cpu, Lock, History,
+  LogOut, ChevronRight, Sparkles, FileSearch, Cpu, Lock, History, CheckCircle,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -73,9 +73,9 @@ export default function Sidebar({ role, username }: SidebarProps) {
               <span className="flex-1">Ingestion Hub</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/loans" className={navLinkClass}>
+            <NavLink to="/compliance" className={navLinkClass}>
               <Database className="w-4 h-4" />
-              <span className="flex-1">All Loans</span>
+              <span className="flex-1">Health & Compliance</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
 
@@ -84,12 +84,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
             </div>
             <NavLink to="/exceptions" className={navLinkClass}>
               <AlertCircle className="w-4 h-4" />
-              <span className="flex-1">Exception Queue</span>
+              <span className="flex-1">Triage Queue</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/self-healing" className={navLinkClass}>
-              <Cpu className="w-4 h-4" />
-              <span className="flex-1">Self-Healing Rules</span>
+            <NavLink to="/approved" className={navLinkClass}>
+              <CheckCircle className="w-4 h-4" />
+              <span className="flex-1">Approved Portfolio</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
 
@@ -98,7 +98,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
             </div>
             <NavLink to="/verified" className={navLinkClass}>
               <Lock className="w-4 h-4" />
-              <span className="flex-1">Verified Portfolio</span>
+              <span className="flex-1">Asset Ledger</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+            <NavLink to="/validation" className={navLinkClass}>
+              <Shield className="w-4 h-4" />
+              <span className="flex-1">Crypto Validation</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
           </>
@@ -112,9 +117,9 @@ export default function Sidebar({ role, username }: SidebarProps) {
               <span className="flex-1">Ingestion Hub</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/loans" className={navLinkClass}>
-              <FileSearch className="w-4 h-4" />
-              <span className="flex-1">Ingestion Logs</span>
+            <NavLink to="/compliance" className={navLinkClass}>
+              <Database className="w-4 h-4" />
+              <span className="flex-1">Health & Compliance</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
           </>
@@ -125,12 +130,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
           <>
             <NavLink to="/" end className={navLinkClass}>
               <AlertCircle className="w-4 h-4" />
-              <span className="flex-1">Exception Queue</span>
+              <span className="flex-1">Triage Queue</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/self-healing" className={navLinkClass}>
-              <Cpu className="w-4 h-4" />
-              <span className="flex-1">Self-Healing Rules</span>
+            <NavLink to="/approved" className={navLinkClass}>
+              <CheckCircle className="w-4 h-4" />
+              <span className="flex-1">Approved Portfolio</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
           </>
@@ -141,12 +146,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
           <>
             <NavLink to="/" end className={navLinkClass}>
               <Lock className="w-4 h-4" />
-              <span className="flex-1">Verified Portfolio</span>
+              <span className="flex-1">Asset Ledger</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/audit" className={navLinkClass}>
-              <History className="w-4 h-4" />
-              <span className="flex-1">Audit & Lineage</span>
+            <NavLink to="/validation" className={navLinkClass}>
+              <Shield className="w-4 h-4" />
+              <span className="flex-1">Crypto Validation</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
           </>

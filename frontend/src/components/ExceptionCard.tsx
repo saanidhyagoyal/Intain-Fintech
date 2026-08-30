@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle, ChevronDown, ChevronUp, Edit3, X } from 'lucide-react';
 import api from '../api/client';
 import AIPanel from './AIPanel';
 import type { ExceptionRecord as ExcType, AISuggestion } from '../types';
@@ -13,8 +13,13 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
   const [expanded, setExpanded] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiData, setAiData] = useState<AISuggestion | null>(exception.ai_suggestion);
+  const [aiError, setAiError] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [comment, setComment] = useState('');
+  
+  // Manual Resolution Modal State
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [manualValue, setManualValue] = useState('');
 
   const severityConfig: Record<string, { class: string; icon: string }> = {
     CRITICAL: { class: 'badge-critical', icon: '🔴' },
@@ -31,21 +36,31 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
 
   const requestAI = async () => {
     setLoadingAI(true);
+    setAiError(false);
+    setAiData(null);
     try {
       const res = await api.post(`/ai/explain/${exception.id}`);
       setAiData(res.data.suggestion);
-    } catch { /* ignore */ }
+    } catch { 
+      setAiError(true);
+    }
     setLoadingAI(false);
   };
 
-  const resolve = async (applyAI: boolean) => {
+  const resolve = async (applyAI: boolean, manualData?: any) => {
+    if (!applyAI && !manualData) {
+      setShowManualModal(true);
+      return;
+    }
     setResolving(true);
     try {
-      await api.patch(`/exceptions/${exception.id}/resolve`, {
+      const payload = {
         apply_ai_suggestion: applyAI,
-        manual_patch: applyAI ? undefined : aiData?.suggested_patch || {},
+        manual_patch: applyAI ? undefined : (manualData ? { [exception.field_name]: manualData } : (aiData?.suggested_patch || {})),
         reviewer_comment: comment || undefined,
-      });
+      };
+      await api.patch(`/exceptions/${exception.id}/resolve`, payload);
+      setShowManualModal(false);
       onResolve?.();
     } catch { /* ignore */ }
     setResolving(false);
@@ -101,6 +116,7 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
               <AIPanel
                 loading={loadingAI}
                 aiData={aiData}
+                aiError={aiError}
                 resolving={resolving}
                 comment={comment}
                 onCommentChange={setComment}
@@ -120,6 +136,75 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
               </span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Manual Resolution Glassmorphism Modal */}
+      {showManualModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-md animate-fade-in" onClick={() => setShowManualModal(false)}>
+          <div className="relative w-full max-w-md mx-4 p-6 rounded-2xl border border-surface-700/60 bg-surface-900/90 backdrop-blur-xl shadow-2xl shadow-black/50 animate-slide-up" onClick={(e) => e.stopPropagation()}>
+            
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-brand-400" />
+                Manual Resolution
+              </h2>
+              <button onClick={() => setShowManualModal(false)} className="text-surface-500 hover:text-surface-300">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-surface-800/50 rounded-lg p-3 text-sm">
+                <div className="flex justify-between mb-1">
+                  <span className="text-surface-400">Field</span>
+                  <span className="text-surface-200 font-mono">{exception.field_name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-surface-400">Current Value</span>
+                  <span className="text-danger-400 font-mono">{exception.actual_value || 'MISSING'}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-surface-400 mb-1">Corrected Value</label>
+                <input
+                  type="text"
+                  value={manualValue}
+                  onChange={(e) => setManualValue(e.target.value)}
+                  placeholder="Enter the correct value..."
+                  className="w-full bg-surface-950 border border-surface-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500 text-surface-100 placeholder-surface-600"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-surface-400 mb-1">Resolution Note (Optional)</label>
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Why was this changed?"
+                  className="w-full bg-surface-950 border border-surface-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500 text-surface-100 placeholder-surface-600 resize-none h-16"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  onClick={() => setShowManualModal(false)}
+                  className="btn-secondary flex-1 justify-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => resolve(false, manualValue)}
+                  disabled={resolving || !manualValue.trim()}
+                  className="btn-primary flex-1 justify-center"
+                >
+                  {resolving ? 'Saving...' : 'Save Correction'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

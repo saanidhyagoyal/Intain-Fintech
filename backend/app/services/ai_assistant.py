@@ -100,9 +100,13 @@ async def explain_exception(
         "status": "OK",
     })
 
-    # Try Gemini first, then Anthropic, then fall back to mock
+    # Try ChatGPT first, then Gemini, then Anthropic, then fall back to mock
     try:
-        if settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != "your_gemini_api_key_here":
+        if settings.CHATGPT_API_KEY and settings.CHATGPT_API_KEY != "your_chatgpt_api_key_here":
+            result = await _call_openai(prompt)
+            response_text = result["text"]
+            model_name = result["model"]
+        elif settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != "your_gemini_api_key_here":
             result = await _call_gemini(prompt)
             response_text = result["text"]
             model_name = result["model"]
@@ -195,7 +199,11 @@ async def suggest_rule(pattern: dict) -> dict:
     model_name = "mock-fallback"
 
     try:
-        if settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != "your_gemini_api_key_here":
+        if settings.CHATGPT_API_KEY and settings.CHATGPT_API_KEY != "your_chatgpt_api_key_here":
+            result = await _call_openai(prompt)
+            response_text = result["text"]
+            model_name = result["model"]
+        elif settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != "your_gemini_api_key_here":
             result = await _call_gemini(prompt)
             response_text = result["text"]
             model_name = result["model"]
@@ -225,18 +233,34 @@ async def suggest_rule(pattern: dict) -> dict:
 
 # ── LLM API Callers ──────────────────────────────────────────
 
+async def _call_openai(prompt: str) -> dict:
+    """Call OpenAI ChatGPT API."""
+    import openai
+    
+    client = openai.AsyncOpenAI(api_key=settings.CHATGPT_API_KEY)
+    response = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2,
+        max_tokens=1024,
+    )
+    return {
+        "text": response.choices[0].message.content,
+        "model": "gpt-4o-mini",
+    }
+
 async def _call_gemini(prompt: str) -> dict:
     """Call Google Gemini API."""
     from google import genai
 
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-3.6-flash",
         contents=prompt,
     )
     return {
         "text": response.text,
-        "model": "gemini-2.0-flash",
+        "model": "gemini-3.6-flash",
     }
 
 

@@ -16,6 +16,10 @@ from app.core.security import UserRole, get_current_user, require_role
 from app.models.event import EventType, LoanEvent
 from app.models.exception import ExceptionRecord, ExceptionStatus
 from app.schemas.loan import LoanDetailResponse, LoanListResponse, LoanState
+from pydantic import BaseModel
+
+class RevokeRequest(BaseModel):
+    reason: str
 from app.services.event_store import (
     LOAN_FIELDS,
     append_event,
@@ -214,4 +218,91 @@ async def bulk_verify_clean_loans(
         "verified_count": verified_count,
         "message": f"Successfully verified {verified_count:,} clean loans.",
     }
+
+
+@router.post(
+    "/loans/{loan_id}/reject",
+    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
+)
+async def reject_loan(
+    loan_id: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Reject a loan, dropping it from the active pipeline."""
+    state = project_loan_state(db, loan_id)
+    if not state:
+        raise HTTPException(status_code=404, detail=f"Loan {loan_id} not found")
+
+    append_event(
+        db=db,
+        loan_id=loan_id,
+        event_type=EventType.LOAN_REJECTED,
+        payload={"reason": "Manual rejection by Reviewer", "rejected_by": current_user["username"]},
+        user_id=current_user["user_id"],
+    )
+    db.commit()
+    return {"message": "Loan rejected"}
+
+
+@router.post(
+    "/loans/{loan_id}/revoke",
+    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
+)
+async def revoke_loan(
+    loan_id: str,
+    req: RevokeRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Revoke a previously verified loan."""
+    state = project_loan_state(db, loan_id)
+    if not state:
+        raise HTTPException(status_code=404, detail=f"Loan {loan_id} not found")
+
+    append_event(
+        db=db,
+        loan_id=loan_id,
+        event_type=EventType.VERIFICATION_REVOKED,
+        payload={"reason": req.reason, "revoked_by": current_user["username"]},
+        user_id=current_user["user_id"],
+    )
+    db.commit()
+    return {"message": "Loan verification revoked"}
+
+
+@router.get("/loans/validate-hash/{hash_val}")
+async def validate_hash(
+    hash_val: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Validate a cryptographic hash to see its status on the ledger."""
+    # Find any LOAN_VERIFIED event that generated this hash
+    verify_event = (
+        db.query(LoanEvent)
+        .filter(LoanEvent.event_type == EventType.LOAN_VERIFIED)
+        .filter(LoanEvent.payload_json.like(f'%"{hash_val}"%'))
+        .first()
+    )
+    if not verify_event:
+        return {"status": "error", "message": "Hash not found on ledger."}
+        
+    loan_id = verify_event.loan_id
+    
+    # Check if there is a subsequent REVOKED event for this loan
+    revoke_event = (
+        db.query(LoanEvent)
+        .filter(LoanEvent.loan_id == loan_id)
+        .filter(LoanEvent.event_type == EventType.VERIFICATION_REVOKED)
+        .order_by(LoanEvent.timestamp.desc())
+        .first()
+    )
+    
+    if revoke_event:
+        payload = json.loads(revoke_event.payload_json)
+        reason = payload.get("reason", "Unknown reason")
+        return {"status": "revoked", "reason": reason}
+        
+    return {"status": "valid"}
 

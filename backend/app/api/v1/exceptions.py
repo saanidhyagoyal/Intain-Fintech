@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import UserRole, get_current_user, require_role
-from app.models.event import EventType
+from app.models.event import EventType, LoanEvent
 from app.models.exception import ExceptionRecord, ExceptionStatus, Severity
 from app.schemas.exception import (
     ExceptionListResponse,
@@ -44,6 +44,13 @@ async def list_exceptions(
         query = query.filter(ExceptionRecord.status == status.upper())
     if loan_id:
         query = query.filter(ExceptionRecord.loan_id == loan_id)
+
+    # Filter out loans that are already verified or rejected
+    excluded_loan_ids = db.query(LoanEvent.loan_id).filter(
+        LoanEvent.event_type.in_([EventType.LOAN_VERIFIED, EventType.LOAN_REJECTED])
+    ).subquery()
+    
+    query = query.filter(ExceptionRecord.loan_id.notin_(excluded_loan_ids))
 
     total = query.count()
     exceptions = (
