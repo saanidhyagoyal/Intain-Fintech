@@ -1,4 +1,5 @@
-import { Bot, CheckCircle, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Bot, CheckCircle, Sparkles, Terminal, ChevronDown, ChevronUp, Shield } from 'lucide-react';
 import type { AISuggestion } from '../types';
 
 interface AIPanelProps {
@@ -20,7 +21,8 @@ export default function AIPanel({
   onRequestAI,
   onResolve
 }: AIPanelProps) {
-  
+  const [showTrace, setShowTrace] = useState(false);
+
   if (!aiData && !loading) {
     return (
       <button
@@ -53,6 +55,19 @@ export default function AIPanel({
     let confColor = 'bg-danger-500'; // < 70%
     if (confPercent >= 90) confColor = 'bg-success-500';
     else if (confPercent >= 70) confColor = 'bg-warning-500';
+
+    const stepIcon: Record<string, string> = {
+      PROMPT_DISPATCHED: '📤',
+      RAW_LLM_RESPONSE: '🤖',
+      GUARDRAIL_EXECUTION: '🛡️',
+    };
+
+    const stepColor: Record<string, string> = {
+      OK: 'text-success-400',
+      PASS: 'text-success-400',
+      WARN: 'text-warning-400',
+      FAIL: 'text-danger-400',
+    };
 
     return (
       <div className="ai-border-glow bg-surface-900/60 rounded-xl p-5 space-y-4">
@@ -88,6 +103,44 @@ export default function AIPanel({
             <pre className="text-brand-300 font-mono text-xs overflow-x-auto">
               {JSON.stringify(aiData.suggested_patch, null, 2)}
             </pre>
+          </div>
+        )}
+
+        {/* Agentic Trace Toggle */}
+        {aiData.agentic_trace && aiData.agentic_trace.length > 0 && (
+          <div className="border-t border-surface-800 pt-3">
+            <button
+              onClick={() => setShowTrace(!showTrace)}
+              className="flex items-center gap-2 text-xs font-medium text-surface-400 hover:text-surface-200 transition-colors w-full"
+            >
+              <Terminal className="w-3.5 h-3.5" />
+              <Shield className="w-3.5 h-3.5" />
+              <span>View Agentic Trace & Guardrails</span>
+              <span className="ml-auto">
+                {showTrace ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </span>
+            </button>
+
+            {showTrace && (
+              <div className="mt-3 bg-[#0d1117] border border-surface-800 rounded-xl overflow-hidden">
+                {aiData.agentic_trace.map((step, idx) => (
+                  <div key={idx} className={`p-4 ${idx > 0 ? 'border-t border-surface-800/50' : ''}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm">{stepIcon[step.step] || '▸'}</span>
+                      <span className="text-xs font-bold text-surface-300 uppercase tracking-wider">
+                        [{step.step}]
+                      </span>
+                      <span className={`text-[10px] font-mono ml-auto ${stepColor[step.status] || 'text-surface-500'}`}>
+                        {step.status}
+                      </span>
+                    </div>
+                    <pre className="font-mono text-[11px] text-surface-400 whitespace-pre-wrap break-all leading-relaxed max-h-48 overflow-y-auto scrollbar-thin">
+                      {step.content}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

@@ -85,11 +85,20 @@ async def explain_exception(
 ) -> AISuggestion:
     """
     Call LLM to explain a validation failure and suggest a fix.
-    Returns an AISuggestion with full model metadata.
+    Returns an AISuggestion with full model metadata and agentic trace.
     """
     prompt = _build_explain_prompt(exception_data, loan_state)
     model_name = "mock-fallback"
     response_text = ""
+    agentic_trace = []
+
+    # ── Step 1: Prompt Construction ──
+    agentic_trace.append({
+        "step": "PROMPT_DISPATCHED",
+        "label": "Prompt Construction",
+        "content": prompt,
+        "status": "OK",
+    })
 
     # Try Gemini first, then Anthropic, then fall back to mock
     try:
@@ -111,11 +120,57 @@ async def explain_exception(
         response_text = json.dumps(result)
         model_name = f"mock-fallback (error: {str(e)[:100]})"
 
-    # Parse LLM response
+    # ── Step 2: Raw LLM Response ──
+    agentic_trace.append({
+        "step": "RAW_LLM_RESPONSE",
+        "label": "Raw LLM Output",
+        "content": response_text,
+        "status": "OK",
+    })
+
+    # ── Step 3: Guardrail Validation ──
+    guardrail_checks = []
+    json_valid = False
     try:
         parsed = json.loads(response_text)
+        json_valid = True
+        guardrail_checks.append("✓ JSON syntax valid")
     except json.JSONDecodeError:
         parsed = _mock_response(exception_data, loan_state)
+        guardrail_checks.append("✗ JSON syntax INVALID — fell back to mock")
+
+    # Schema validation
+    has_explanation = "explanation" in parsed
+    has_patch = "suggested_patch" in parsed
+    has_confidence = "confidence" in parsed
+    guardrail_checks.append(f"{'✓' if has_explanation else '✗'} explanation field present")
+    guardrail_checks.append(f"{'✓' if has_patch else '✗'} suggested_patch field present")
+    guardrail_checks.append(f"{'✓' if has_confidence else '✗'} confidence field present")
+
+    # Hallucination guard: check patch only references known loan fields
+    patch_keys = set(parsed.get("suggested_patch", {}).keys())
+    known_fields = {
+        "loan_id", "borrower_id", "loan_type", "origination_date", "maturity_date",
+        "original_principal", "current_balance", "interest_rate", "term_months",
+        "borrower_state", "loan_purpose", "credit_grade", "employment_length",
+        "income_band", "payment_status", "days_past_due", "servicer_name",
+        "last_payment_date", "last_updated_at", "document_status", "source_system",
+    }
+    unknown_fields = patch_keys - known_fields
+    if unknown_fields:
+        guardrail_checks.append(f"⚠ Patch contains unknown fields: {unknown_fields}")
+    else:
+        guardrail_checks.append("✓ No hallucinated fields in patch")
+
+    overall = "PASS" if (json_valid and has_explanation and has_patch and not unknown_fields) else "WARN"
+    guardrail_checks.append(f"Guardrail Result: {overall}")
+
+    agentic_trace.append({
+        "step": "GUARDRAIL_EXECUTION",
+        "label": "Guardrail Validation",
+        "content": "\n".join(guardrail_checks),
+        "status": overall,
+    })
 
     return AISuggestion(
         exception_id=exception_data.get("id", 0),
@@ -127,6 +182,7 @@ async def explain_exception(
         model_name=model_name,
         prompt_used=prompt,
         generated_at=datetime.now(timezone.utc),
+        agentic_trace=agentic_trace,
     )
 
 

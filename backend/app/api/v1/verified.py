@@ -210,7 +210,7 @@ async def get_verified_loan(
 @router.post(
     "/loans/{loan_id}/verify",
     response_model=VerifiedLoanResponse,
-    dependencies=[Depends(require_role(UserRole.REVIEWER))],
+    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
 )
 async def verify_loan(
     loan_id: str,
@@ -228,19 +228,19 @@ async def verify_loan(
 
     # Check for unresolved exceptions
     from app.models.exception import ExceptionRecord, ExceptionStatus
-    open_exceptions = (
+    open_exceptions_query = (
         db.query(ExceptionRecord)
         .filter(
             ExceptionRecord.loan_id == loan_id,
-            ExceptionRecord.status != ExceptionStatus.RESOLVED,
+            ExceptionRecord.status.in_([ExceptionStatus.OPEN, ExceptionStatus.IN_REVIEW]),
         )
-        .count()
     )
-    if open_exceptions > 0:
+    open_exceptions_count = open_exceptions_query.count()
+    if open_exceptions_count > 0:
+        blocking_ids = [exc.id for exc in open_exceptions_query.all()]
         raise HTTPException(
             status_code=400,
-            detail=f"Cannot verify loan with {open_exceptions} unresolved exception(s). "
-            "Resolve all exceptions first.",
+            detail=f"Cannot verify loan. Unresolved exception IDs: {blocking_ids}",
         )
 
     # Compute canonical record hash

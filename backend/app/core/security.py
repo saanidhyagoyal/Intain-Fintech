@@ -69,15 +69,14 @@ async def get_current_user(
     """
     Extracts and validates the JWT from the Authorization header.
     Returns a dict with user info for downstream handlers.
-    Falls back to a default operator user if no token is provided (dev mode).
+    Raises 401 if no token is provided or if the token is invalid.
     """
     if credentials is None:
-        # Dev convenience: return a default operator user
-        return {
-            "user_id": 1,
-            "username": "operator",
-            "role": UserRole.DATA_OPERATOR,
-        }
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required. Please log in.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     payload = decode_access_token(credentials.credentials)
     return {

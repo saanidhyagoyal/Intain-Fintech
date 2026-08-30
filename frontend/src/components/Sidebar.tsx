@@ -33,10 +33,9 @@ export default function Sidebar({ role, username }: SidebarProps) {
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
-      isActive
-        ? 'bg-brand-600/20 text-brand-400 shadow-sm'
-        : 'text-surface-400 hover:text-surface-100 hover:bg-surface-800/60'
+    `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
+      ? 'bg-brand-600/20 text-brand-400 shadow-sm'
+      : 'text-surface-400 hover:text-surface-100 hover:bg-surface-800/60'
     }`;
 
   return (
@@ -60,7 +59,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
         {/* ─── ADMIN: Grouped Sections ─── */}
         {role === 'ADMIN' && (
           <>
-            <NavLink to="/admin" end className={navLinkClass}>
+            <NavLink to="/" end className={navLinkClass}>
               <Shield className="w-4 h-4" />
               <span className="flex-1">Master Admin</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -69,12 +68,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
             <div className="px-3 pt-4 pb-1">
               <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Operations</span>
             </div>
-            <NavLink to="/operator" end className={navLinkClass}>
+            <NavLink to="/upload" className={navLinkClass}>
               <Upload className="w-4 h-4" />
               <span className="flex-1">Ingestion Hub</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/operator/logs" className={navLinkClass}>
+            <NavLink to="/loans" className={navLinkClass}>
               <Database className="w-4 h-4" />
               <span className="flex-1">All Loans</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -83,12 +82,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
             <div className="px-3 pt-4 pb-1">
               <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Triage</span>
             </div>
-            <NavLink to="/reviewer" end className={navLinkClass}>
+            <NavLink to="/exceptions" className={navLinkClass}>
               <AlertCircle className="w-4 h-4" />
               <span className="flex-1">Exception Queue</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/reviewer/rules" className={navLinkClass}>
+            <NavLink to="/self-healing" className={navLinkClass}>
               <Cpu className="w-4 h-4" />
               <span className="flex-1">Self-Healing Rules</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -97,7 +96,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
             <div className="px-3 pt-4 pb-1">
               <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Consumer Ledger</span>
             </div>
-            <NavLink to="/consumer" end className={navLinkClass}>
+            <NavLink to="/verified" className={navLinkClass}>
               <Lock className="w-4 h-4" />
               <span className="flex-1">Verified Portfolio</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -108,12 +107,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
         {/* ─── DATA OPERATOR: Ingestion only ─── */}
         {role === 'DATA_OPERATOR' && (
           <>
-            <NavLink to="/operator" end className={navLinkClass}>
+            <NavLink to="/" end className={navLinkClass}>
               <Upload className="w-4 h-4" />
               <span className="flex-1">Ingestion Hub</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/operator/logs" className={navLinkClass}>
+            <NavLink to="/loans" className={navLinkClass}>
               <FileSearch className="w-4 h-4" />
               <span className="flex-1">Ingestion Logs</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -124,12 +123,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
         {/* ─── REVIEWER: Triage only ─── */}
         {role === 'REVIEWER' && (
           <>
-            <NavLink to="/reviewer" end className={navLinkClass}>
+            <NavLink to="/" end className={navLinkClass}>
               <AlertCircle className="w-4 h-4" />
               <span className="flex-1">Exception Queue</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/reviewer/rules" className={navLinkClass}>
+            <NavLink to="/self-healing" className={navLinkClass}>
               <Cpu className="w-4 h-4" />
               <span className="flex-1">Self-Healing Rules</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -140,12 +139,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
         {/* ─── DATA CONSUMER: Verified & Audit only ─── */}
         {role === 'DATA_CONSUMER' && (
           <>
-            <NavLink to="/consumer" end className={navLinkClass}>
+            <NavLink to="/" end className={navLinkClass}>
               <Lock className="w-4 h-4" />
               <span className="flex-1">Verified Portfolio</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
-            <NavLink to="/consumer/audit" className={navLinkClass}>
+            <NavLink to="/audit" className={navLinkClass}>
               <History className="w-4 h-4" />
               <span className="flex-1">Audit & Lineage</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />

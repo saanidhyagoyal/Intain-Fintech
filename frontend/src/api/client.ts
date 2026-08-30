@@ -1,20 +1,46 @@
 import axios from 'axios';
 
+/**
+ * Centralized Axios client for all API calls.
+ * Base URL is pulled from environment variable VITE_API_URL (defaults to '/api').
+ */
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
-// JWT interceptor
+// ── JWT Request Interceptor ──────────────────────────────────
+// Automatically attaches Authorization: Bearer <token> to EVERY
+// outgoing request. The token is extracted from the `user` object
+// stored in localStorage at login time.
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  // Primary: read token from the user session object
+  try {
+    const raw = localStorage.getItem('user');
+    if (raw) {
+      const user = JSON.parse(raw);
+      if (user?.token) {
+        config.headers.Authorization = `Bearer ${user.token}`;
+      }
+    }
+  } catch {
+    // Malformed JSON in localStorage – ignore
   }
+
+  // Fallback: also check a standalone 'token' key (legacy compat)
+  if (!config.headers.Authorization) {
+    const standaloneToken = localStorage.getItem('token');
+    if (standaloneToken) {
+      config.headers.Authorization = `Bearer ${standaloneToken}`;
+    }
+  }
+
   return config;
 });
 
-// Error interceptor
+// ── 401 Response Interceptor ─────────────────────────────────
+// If the backend returns 401 (expired/invalid token), clear the
+// session and redirect to login.
 api.interceptors.response.use(
   (response) => response,
   (error) => {

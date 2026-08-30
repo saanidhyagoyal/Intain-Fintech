@@ -36,6 +36,10 @@ class AISuggestion(BaseModel):
     prompt_used: str = Field(description="The full prompt sent to the model")
     generated_at: datetime = Field(description="Timestamp of generation")
     tokens_used: Optional[int] = None
+    agentic_trace: Optional[list] = Field(
+        default=None,
+        description="Agentic trace: prompt construction, raw LLM output, guardrail validation steps"
+    )
 
 
 class AIExplainResponse(BaseModel):

@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import LoginPage from './pages/LoginPage';
-import OperatorDash, { OperatorHub, OperatorLogs } from './pages/OperatorDash';
-import ReviewerDash, { ExceptionQueue, SelfHealingRules } from './pages/ReviewerDash';
-import ConsumerDash, { VerifiedPortfolio, AuditLineage } from './pages/ConsumerDash';
-import AdminDash from './pages/AdminDash';
+import OperatorDash from './pages/OperatorDash';
+import ReviewerDash from './pages/ReviewerDash';
+import ConsumerDash from './pages/ConsumerDash';
 import LoanDetail from './pages/LoanDetail';
+import AdminDash from './pages/AdminDash';
 
 function getUser() {
   try {
@@ -30,22 +30,22 @@ function ProtectedLayout() {
   );
 }
 
-/** Role-based default dashboard redirector */
-function DashboardRedirect() {
+/** Role-based default dashboard */
+function Dashboard() {
   const user = getUser();
   if (!user) return <Navigate to="/login" replace />;
 
   switch (user.role) {
     case 'DATA_OPERATOR':
-      return <Navigate to="/operator" replace />;
+      return <OperatorDash />;
     case 'REVIEWER':
-      return <Navigate to="/reviewer" replace />;
+      return <ReviewerDash />;
     case 'DATA_CONSUMER':
-      return <Navigate to="/consumer" replace />;
+      return <ConsumerDash />;
     case 'ADMIN':
-      return <Navigate to="/admin" replace />;
+      return <AdminDash />;
     default:
-      return <Navigate to="/operator" replace />;
+      return <OperatorDash />;
   }
 }
 
@@ -62,51 +62,52 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        
         <Route element={<ProtectedLayout />}>
-          <Route path="/" element={<DashboardRedirect />} />
+          {/* Default route renders role-specific dashboard */}
+          <Route path="/" element={<Dashboard />} />
 
-          {/* Operator Routes (Nested) */}
-          <Route path="/operator" element={
+          {/* Operator routes */}
+          <Route path="/upload" element={
             <RoleGuard allowed={['ADMIN', 'DATA_OPERATOR']}>
               <OperatorDash />
             </RoleGuard>
-          }>
-            <Route index element={<OperatorHub />} />
-            <Route path="logs" element={<OperatorLogs />} />
-          </Route>
+          } />
 
-          {/* Reviewer Routes (Nested) */}
-          <Route path="/reviewer" element={
+          {/* Reviewer routes */}
+          <Route path="/exceptions" element={
             <RoleGuard allowed={['ADMIN', 'REVIEWER']}>
               <ReviewerDash />
             </RoleGuard>
-          }>
-            <Route index element={<ExceptionQueue />} />
-            <Route path="rules" element={<SelfHealingRules />} />
-          </Route>
+          } />
+          <Route path="/self-healing" element={
+            <RoleGuard allowed={['ADMIN', 'REVIEWER']}>
+              <ReviewerDash />
+            </RoleGuard>
+          } />
 
-          {/* Consumer Routes (Nested) */}
-          <Route path="/consumer" element={
+          {/* Consumer routes */}
+          <Route path="/verified" element={
             <RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}>
               <ConsumerDash />
             </RoleGuard>
-          }>
-            <Route index element={<VerifiedPortfolio />} />
-            <Route path="audit" element={<AuditLineage />} />
-          </Route>
+          } />
+          <Route path="/audit" element={
+            <RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}>
+              <ConsumerDash />
+            </RoleGuard>
+          } />
 
-          {/* Admin Routes */}
+          {/* Shared routes */}
+          <Route path="/loans" element={<OperatorDash />} />
+          <Route path="/loans/:loanId" element={<LoanDetail />} />
+
+          {/* Admin */}
           <Route path="/admin" element={
             <RoleGuard allowed={['ADMIN']}>
               <AdminDash />
             </RoleGuard>
           } />
-
-          {/* Legacy or Shared routes */}
-          <Route path="/loans/:loanId" element={<LoanDetail />} />
         </Route>
-        
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

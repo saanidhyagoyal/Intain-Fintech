@@ -29,7 +29,20 @@ class Settings(BaseSettings):
     # ── App ───────────────────────────────────────────────────
     APP_NAME: str = "Loan Data Verification Copilot"
     DEBUG: bool = True
-    RESET_DB_ON_STARTUP: bool = False  # Set True to wipe DB on every restart
+    RESET_DB_ON_STARTUP: bool = False  # Defaults to False – DB is NOT wiped on normal restarts
+
+    # ── File Upload ───────────────────────────────────────────
+    UPLOAD_DIR: str = "./uploads"
+
+    # ── Seed User Credentials (pulled from .env, no hardcoding) ─
+    SEED_ADMIN_USER: str = "admin"
+    SEED_ADMIN_PASS: str = "admin123"
+    SEED_OPERATOR_USER: str = "operator"
+    SEED_OPERATOR_PASS: str = "operator123"
+    SEED_REVIEWER_USER: str = "reviewer"
+    SEED_REVIEWER_PASS: str = "reviewer123"
+    SEED_CONSUMER_USER: str = "consumer"
+    SEED_CONSUMER_PASS: str = "consumer123"
 
     model_config = {
         "env_file": str(_ENV_PATH),

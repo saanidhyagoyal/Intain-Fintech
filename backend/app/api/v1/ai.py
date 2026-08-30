@@ -24,7 +24,7 @@ router = APIRouter()
 @router.post(
     "/explain/{exception_id}",
     response_model=AIExplainResponse,
-    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.DATA_OPERATOR))],
+    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.DATA_OPERATOR, UserRole.ADMIN))],
 )
 async def ai_explain(
     exception_id: int,
@@ -104,7 +104,7 @@ async def ai_explain(
 @router.post(
     "/suggest-rule",
     response_model=SuggestRuleResponse,
-    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.DATA_OPERATOR))],
+    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.DATA_OPERATOR, UserRole.ADMIN))],
 )
 async def ai_suggest_rule(
     req: SuggestRuleRequest,

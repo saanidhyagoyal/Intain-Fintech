@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Outlet, useOutletContext } from 'react-router-dom';
 import { Upload, Database, FileText, TrendingUp, CheckCircle, AlertTriangle, FileWarning, ArrowRight } from 'lucide-react';
 import api from '../api/client';
 import StatsCard from '../components/StatsCard';
 import UploadZone from '../components/UploadZone';
 import type { SummaryResponse } from '../types';
 
-export function OperatorHub() {
-  const { summary, fetchData } = useOutletContext<{ summary: SummaryResponse; fetchData: () => void }>();
+function OperatorHub({ summary, fetchData }: { summary: SummaryResponse; fetchData: () => void }) {
   const cleanRows = summary.clean_rows ?? Math.max(0, summary.total_loans - (summary.loans_with_open_exceptions ?? 0));
   const cleanPercent = summary.total_loans > 0 ? Math.round((cleanRows / summary.total_loans) * 100) : 0;
 
@@ -101,8 +99,7 @@ export function OperatorHub() {
   );
 }
 
-export function OperatorLogs() {
-  const { summary } = useOutletContext<{ summary: SummaryResponse }>();
+function OperatorLogs({ summary }: { summary: SummaryResponse }) {
 
   if (summary.recent_uploads.length === 0) {
     return (
@@ -196,7 +193,8 @@ export default function OperatorDash() {
         <StatsCard icon={<TrendingUp className="w-5 h-5 text-info-400" />} label="Data Quality Score" value={`${summary.data_quality_score}%`} color="info" delay={300} />
       </div>
 
-      <Outlet context={{ summary, fetchData }} />
+      <OperatorHub summary={summary} fetchData={fetchData} />
+      <OperatorLogs summary={summary} />
     </div>
   );
 }

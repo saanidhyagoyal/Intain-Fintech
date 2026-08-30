@@ -105,6 +105,12 @@ export interface AISuggestion {
   severity_assessment: string;
   model_name: string;
   generated_at: string;
+  agentic_trace?: Array<{
+    step: string;
+    label: string;
+    content: string;
+    status: string;
+  }>;
 }
 
 export interface ExceptionRecord {

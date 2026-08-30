@@ -35,38 +35,48 @@ async def lifespan(app: FastAPI):
 
 
 def _seed_users():
-    """Create default users for the three roles if they don't exist."""
+    """Create default users for the four roles if they don't exist.
+    Credentials are pulled from Settings (i.e. .env) – nothing is hardcoded."""
     db = SessionLocal()
     try:
         if db.query(User).count() == 0:
             defaults = [
                 User(
-                    username="admin",
-                    email="admin@intain.io",
-                    hashed_password=hashlib.sha256(b"admin123").hexdigest(),
+                    username=settings.SEED_ADMIN_USER,
+                    email=f"{settings.SEED_ADMIN_USER}@intain.io",
+                    hashed_password=hashlib.sha256(
+                        settings.SEED_ADMIN_PASS.encode()
+                    ).hexdigest(),
                     role=UserRole.ADMIN,
                 ),
                 User(
-                    username="operator",
-                    email="operator@intain.io",
-                    hashed_password=hashlib.sha256(b"operator123").hexdigest(),
+                    username=settings.SEED_OPERATOR_USER,
+                    email=f"{settings.SEED_OPERATOR_USER}@intain.io",
+                    hashed_password=hashlib.sha256(
+                        settings.SEED_OPERATOR_PASS.encode()
+                    ).hexdigest(),
                     role=UserRole.DATA_OPERATOR,
                 ),
                 User(
-                    username="reviewer",
-                    email="reviewer@intain.io",
-                    hashed_password=hashlib.sha256(b"reviewer123").hexdigest(),
+                    username=settings.SEED_REVIEWER_USER,
+                    email=f"{settings.SEED_REVIEWER_USER}@intain.io",
+                    hashed_password=hashlib.sha256(
+                        settings.SEED_REVIEWER_PASS.encode()
+                    ).hexdigest(),
                     role=UserRole.REVIEWER,
                 ),
                 User(
-                    username="consumer",
-                    email="consumer@intain.io",
-                    hashed_password=hashlib.sha256(b"consumer123").hexdigest(),
+                    username=settings.SEED_CONSUMER_USER,
+                    email=f"{settings.SEED_CONSUMER_USER}@intain.io",
+                    hashed_password=hashlib.sha256(
+                        settings.SEED_CONSUMER_PASS.encode()
+                    ).hexdigest(),
                     role=UserRole.DATA_CONSUMER,
                 ),
             ]
             db.add_all(defaults)
             db.commit()
+            logger.info("✅ Seeded %d default users from .env", len(defaults))
     finally:
         db.close()
 

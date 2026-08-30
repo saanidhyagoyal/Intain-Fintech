@@ -1,239 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Outlet, useOutletContext, useNavigate } from 'react-router-dom';
-import { Shield, Download, Hash, CheckCircle, TrendingUp, Database, Lock, ShieldCheck, Eye } from 'lucide-react';
+import { Shield, Download, Hash, CheckCircle, TrendingUp, Database, Lock, ShieldCheck, Eye, Search } from 'lucide-react';
 import api from '../api/client';
 import StatsCard from '../components/StatsCard';
 import AuditTimeline from '../components/AuditTimeline';
 import type { VerifiedLoanResponse, SummaryResponse, LoanEvent } from '../types';
-
-export function VerifiedPortfolio() {
-  const { verified, hashVerified, verifyingHash, verifyLedgerIntegrity } = useOutletContext<{
-    verified: VerifiedLoanResponse[];
-    summary: SummaryResponse | null;
-    hashVerified: boolean | null;
-    verifyingHash: boolean;
-    verifyLedgerIntegrity: () => void;
-  }>();
-
-  const navigate = useNavigate();
-
-  const formatCurrency = (val: number | null) =>
-    val != null ? `$${val.toLocaleString('en-US', { minimumFractionDigits: 0 })}` : '—';
-
-  return (
-    <div className="space-y-6">
-      {/* Cryptographic Verification Banner */}
-      <div className={`glass-card p-6 transition-all duration-500 ${hashVerified === true ? 'border-success-500/50 shadow-[0_0_30px_rgba(34,197,94,0.15)]' : 'border-surface-700/50'}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-xl transition-all duration-500 ${
-              hashVerified === true ? 'bg-success-500/20' :
-              hashVerified === false ? 'bg-danger-500/20' : 'bg-surface-800'
-            }`}>
-              {hashVerified === true ? (
-                <ShieldCheck className="w-7 h-7 text-success-400 animate-pulse" />
-              ) : (
-                <Lock className="w-7 h-7 text-surface-400" />
-              )}
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-surface-100">Ledger Integrity Verification</h2>
-              {hashVerified === true ? (
-                <p className="text-success-400 text-sm mt-0.5 font-medium">
-                  ✓ 100% Cryptographically Intact & Tamper-Evident — All SHA-256 chains verified
-                </p>
-              ) : hashVerified === false ? (
-                <p className="text-danger-400 text-sm mt-0.5 font-medium">
-                  ✗ Hash chain integrity violation detected. Investigate immediately.
-                </p>
-              ) : (
-                <p className="text-surface-400 text-sm mt-0.5">
-                  Validate the SHA-256 hash chain across all {verified.length} verified records
-                </p>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={verifyLedgerIntegrity}
-            disabled={verifyingHash}
-            className={`text-sm px-5 py-2.5 rounded-xl font-medium transition-all duration-200 ${
-              hashVerified === true
-                ? 'bg-success-500/20 text-success-400 border border-success-500/30'
-                : 'btn-primary'
-            }`}
-          >
-            {verifyingHash ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Verifying...
-              </div>
-            ) : hashVerified === true ? (
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" />
-                Verified ✓
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Hash className="w-4 h-4" />
-                Verify Ledger Integrity
-              </div>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Canonical Data Grid */}
-      <div className="glass-card p-6">
-        <h2 className="text-lg font-semibold text-surface-100 mb-4 flex items-center gap-2">
-          <Lock className="w-5 h-5 text-success-400" />
-          Canonical Verified Records
-          <span className="text-xs text-surface-500">({verified.length})</span>
-        </h2>
-
-        {verified.length === 0 ? (
-          <div className="text-center py-12">
-            <Shield className="w-12 h-12 text-surface-600 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-surface-300">No Verified Loans Yet</h3>
-            <p className="text-surface-500 text-sm mt-1">
-              Loans will appear here once a Reviewer marks them as verified.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-xl">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Loan ID</th>
-                  <th className="text-right">Balance</th>
-                  <th className="text-right">Rate</th>
-                  <th>Status</th>
-                  <th>Verified By</th>
-                  <th>Record Hash</th>
-                  <th>Chain</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {verified.map((v) => (
-                  <tr key={v.loan.loan_id}>
-                    <td className="font-mono text-brand-400 text-sm">{v.loan.loan_id}</td>
-                    <td className="font-mono text-sm text-right">{formatCurrency(v.loan.current_balance)}</td>
-                    <td className="font-mono text-sm text-right">{v.loan.interest_rate?.toFixed(2)}%</td>
-                    <td>
-                      <span className="badge-verified">✓ Verified</span>
-                    </td>
-                    <td className="text-surface-300 text-sm">{v.verified_by || '—'}</td>
-                    <td>
-                      <span className="font-mono text-xs text-surface-400 bg-surface-800 px-2 py-1 rounded-lg">
-                        <Hash className="w-3 h-3 inline mr-1" />
-                        {v.record_hash?.slice(0, 12)}...
-                      </span>
-                    </td>
-                    <td>
-                      {v.hash_chain_valid ? (
-                        <span className="text-success-400 text-xs font-medium">✓ Valid</span>
-                      ) : (
-                        <span className="text-danger-400 text-xs font-medium">✗ Broken</span>
-                      )}
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => navigate(`/consumer/audit?loanId=${v.loan.loan_id}`)}
-                        className={`btn-ghost text-xs px-2 py-1`}
-                      >
-                        <Eye className="w-3 h-3" />
-                        Inspect
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function AuditLineage() {
-  const { handleRewind } = useOutletContext<{ handleRewind: (ts: string) => void }>();
-  const [auditEvents, setAuditEvents] = useState<LoanEvent[]>([]);
-  const [auditLoading, setAuditLoading] = useState(false);
-  const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const loanId = params.get('loanId');
-    if (loanId) {
-      setSelectedLoanId(loanId);
-      loadAuditEvents(loanId);
-    }
-  }, []);
-
-  const loadAuditEvents = async (loanId: string) => {
-    setAuditLoading(true);
-    try {
-      const res = await api.get(`/loans/${loanId}`);
-      setAuditEvents(res.data.events || []);
-    } catch {
-      setAuditEvents([]);
-    }
-    setAuditLoading(false);
-  };
-
-  const loadLoan = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const id = fd.get('loanId') as string;
-    if (id) {
-      setSelectedLoanId(id);
-      loadAuditEvents(id);
-      // update URL without refresh
-      const url = new URL(window.location.href);
-      url.searchParams.set('loanId', id);
-      window.history.pushState({}, '', url);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="glass-card p-6 border-brand-500/20">
-        <h2 className="text-lg font-semibold text-surface-100 mb-4 flex items-center gap-2">
-          <Eye className="w-5 h-5 text-brand-400" />
-          Audit Trail {selectedLoanId ? `— Loan ${selectedLoanId}` : 'Inspector'}
-        </h2>
-        
-        <form onSubmit={loadLoan} className="flex gap-2 max-w-sm mb-6">
-          <input
-            type="text"
-            name="loanId"
-            defaultValue={selectedLoanId || ''}
-            placeholder="Enter Loan ID..."
-            className="input-field text-sm"
-          />
-          <button type="submit" className="btn-secondary text-sm">Load</button>
-        </form>
-
-        {auditLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="w-6 h-6 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
-          </div>
-        ) : selectedLoanId ? (
-          <AuditTimeline
-            events={auditEvents}
-            hashChainValid={true}
-            onRewind={handleRewind}
-          />
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-surface-500 text-sm">Enter a Loan ID above to inspect its cryptographic audit trail.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function ConsumerDash() {
   const [verified, setVerified] = useState<VerifiedLoanResponse[]>([]);
@@ -241,6 +11,10 @@ export default function ConsumerDash() {
   const [loading, setLoading] = useState(true);
   const [verifyingHash, setVerifyingHash] = useState(false);
   const [hashVerified, setHashVerified] = useState<boolean | null>(null);
+  const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
+  const [auditEvents, setAuditEvents] = useState<LoanEvent[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -279,12 +53,28 @@ export default function ConsumerDash() {
     setVerifyingHash(false);
   };
 
-  const handleRewind = async (_timestamp: string) => {
-    // Requires knowing which loan id. Pass this up or handle via context.
-    // In this refactor, we let AuditLineage manage its own loanId.
-    // We can just keep it dummy here or implement it. 
-    // We'll pass handleRewind to outlet just in case.
+  const inspectAuditTrail = async (loanId: string) => {
+    if (selectedLoanId === loanId) {
+      setSelectedLoanId(null);
+      return;
+    }
+    setSelectedLoanId(loanId);
+    setAuditLoading(true);
+    try {
+      const res = await api.get(`/loans/${loanId}`);
+      setAuditEvents(res.data.events || []);
+    } catch {
+      setAuditEvents([]);
+    }
+    setAuditLoading(false);
   };
+
+  const formatCurrency = (val: number | null) =>
+    val != null ? `$${val.toLocaleString('en-US', { minimumFractionDigits: 0 })}` : '—';
+
+  const filteredVerified = verified.filter(v =>
+    v.loan.loan_id?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -323,6 +113,64 @@ export default function ConsumerDash() {
           <StatsCard icon={<CheckCircle className="w-5 h-5 text-success-400" />} label="Resolution Rate" value={`${summary.resolution_rate}%`} color="success" delay={300} />
         </div>
       )}
+
+      {/* Cryptographic Verification Banner */}
+      <div className={`glass-card p-6 transition-all duration-500 ${hashVerified === true ? 'border-success-500/50 shadow-[0_0_30px_rgba(34,197,94,0.15)]' : 'border-surface-700/50'}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`p-3 rounded-xl transition-all duration-500 ${hashVerified === true ? 'bg-success-500/20' :
+                hashVerified === false ? 'bg-danger-500/20' : 'bg-surface-800'
+              }`}>
+              {hashVerified === true ? (
+                <ShieldCheck className="w-7 h-7 text-success-400 animate-pulse" />
+              ) : (
+                <Lock className="w-7 h-7 text-surface-400" />
+              )}
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-surface-100">Ledger Integrity Verification</h2>
+              {hashVerified === true ? (
+                <p className="text-success-400 text-sm mt-0.5 font-medium">
+                  ✓ 100% Cryptographically Intact & Tamper-Evident — All SHA-256 chains verified
+                </p>
+              ) : hashVerified === false ? (
+                <p className="text-danger-400 text-sm mt-0.5 font-medium">
+                  ✗ Hash chain integrity violation detected. Investigate immediately.
+                </p>
+              ) : (
+                <p className="text-surface-400 text-sm mt-0.5">
+                  Validate the SHA-256 hash chain across all {verified.length} verified records
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={verifyLedgerIntegrity}
+            disabled={verifyingHash}
+            className={`text-sm px-5 py-2.5 rounded-xl font-medium transition-all duration-200 ${hashVerified === true
+                ? 'bg-success-500/20 text-success-400 border border-success-500/30'
+                : 'btn-primary'
+              }`}
+          >
+            {verifyingHash ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Verifying...
+              </div>
+            ) : hashVerified === true ? (
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4" />
+                Verified ✓
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Hash className="w-4 h-4" />
+                Verify Ledger Integrity
+              </div>
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* Data Quality Gauge */}
       {summary && (
@@ -371,7 +219,117 @@ export default function ConsumerDash() {
         </div>
       )}
 
-      <Outlet context={{ verified, summary, hashVerified, verifyingHash, verifyLedgerIntegrity, handleRewind }} />
+      {/* Canonical Data Grid */}
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
+            <Lock className="w-5 h-5 text-success-400" />
+            Canonical Verified Records
+            <span className="text-xs text-surface-500">({filteredVerified.length})</span>
+          </h2>
+          <div className="w-72 relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-surface-500" />
+            <input
+              type="text"
+              placeholder="Search by Loan ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-surface-900 border border-surface-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-brand-500 text-surface-100 placeholder-surface-500 pl-9"
+            />
+          </div>
+        </div>
+
+        {filteredVerified.length === 0 ? (
+          <div className="text-center py-12">
+            <Shield className="w-12 h-12 text-surface-600 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-surface-300">
+              {searchQuery ? 'No Matching Loans' : 'No Verified Loans Yet'}
+            </h3>
+            <p className="text-surface-500 text-sm mt-1">
+              {searchQuery
+                ? `No verified loans match "${searchQuery}"`
+                : 'Loans will appear here once a Reviewer marks them as verified.'}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Loan ID</th>
+                  <th className="text-right">Balance</th>
+                  <th className="text-right">Rate</th>
+                  <th>Status</th>
+                  <th>Verified By</th>
+                  <th>Record Hash</th>
+                  <th>Chain</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredVerified.map((v) => (
+                  <tr
+                    key={v.loan.loan_id}
+                    className={`cursor-pointer transition-colors ${selectedLoanId === v.loan.loan_id ? 'bg-brand-500/10' : 'hover:bg-surface-800/50'}`}
+                    onClick={() => inspectAuditTrail(v.loan.loan_id || '')}
+                  >
+                    <td className="font-mono text-brand-400 text-sm">{v.loan.loan_id}</td>
+                    <td className="font-mono text-sm text-right">{formatCurrency(v.loan.current_balance)}</td>
+                    <td className="font-mono text-sm text-right">{v.loan.interest_rate?.toFixed(2)}%</td>
+                    <td>
+                      <span className="badge-verified">✓ Verified</span>
+                    </td>
+                    <td className="text-surface-300 text-sm">{v.verified_by || '—'}</td>
+                    <td>
+                      <span className="font-mono text-xs text-surface-400 bg-surface-800 px-2 py-1 rounded-lg">
+                        <Hash className="w-3 h-3 inline mr-1" />
+                        {v.record_hash?.slice(0, 12)}...
+                      </span>
+                    </td>
+                    <td>
+                      {v.hash_chain_valid ? (
+                        <span className="text-success-400 text-xs font-medium">✓ Valid</span>
+                      ) : (
+                        <span className="text-danger-400 text-xs font-medium">✗ Broken</span>
+                      )}
+                    </td>
+                    <td>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); inspectAuditTrail(v.loan.loan_id || ''); }}
+                        className={`btn-ghost text-xs px-2 py-1 ${selectedLoanId === v.loan.loan_id ? 'text-brand-400' : ''}`}
+                      >
+                        <Eye className="w-3 h-3" />
+                        {selectedLoanId === v.loan.loan_id ? 'Close' : 'Inspect'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Embedded Audit Trail Inspector */}
+      {selectedLoanId && (
+        <div className="glass-card p-6 animate-slide-up border-brand-500/20">
+          <h2 className="text-lg font-semibold text-surface-100 mb-4 flex items-center gap-2">
+            <Eye className="w-5 h-5 text-brand-400" />
+            Audit Trail — Loan {selectedLoanId}
+          </h2>
+          {auditLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+            </div>
+          ) : (
+            <AuditTimeline
+              events={auditEvents}
+              hashChainValid={true}
+              onRewind={() => {}}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

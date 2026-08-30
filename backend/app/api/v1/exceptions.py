@@ -161,13 +161,25 @@ async def resolve_exception(
             user_id=current_user["user_id"],
         )
 
-    # Update exception status
+    # Update exception status explicitly
     exc.status = ExceptionStatus.RESOLVED
     exc.resolved_by = current_user["user_id"]
     exc.resolved_at = datetime.now(timezone.utc)
     exc.resolution_type = resolution_type
-    if req.reviewer_comment:
-        exc.reviewer_comment = req.reviewer_comment
+    exc.reviewer_comment = req.reviewer_comment
+
+    # Emit the resolved event
+    append_event(
+        db=db,
+        loan_id=exc.loan_id,
+        event_type=EventType.EXCEPTION_RESOLVED,
+        payload={
+            "exception_id": exc.id,
+            "resolution_type": resolution_type,
+            "reviewer_comment": req.reviewer_comment,
+        },
+        user_id=current_user["user_id"],
+    )
 
     db.commit()
     db.refresh(exc)

@@ -1,98 +1,40 @@
-# AI Development Log — Loan Data Verification Copilot
+# AI Development Log (Agentic Coding)
 
-> **Requirement**: Section 10 of the Intain PDF mandates documentation of AI-assisted development.
+## 1. Overview
+This project was entirely built using **Antigravity (AGY)**, an advanced agentic coding assistant developed by Google DeepMind. The AI was given end-to-end autonomy to design the architecture, implement the backend/frontend, handle complex file ingestion (CSV streaming), create the React components, and write automated tests.
 
----
+## 2. Tools Used
+- **Agent:** Antigravity (AGY)
+- **Model:** Gemini-backed coding agent
+- **Environment:** Antigravity IDE (VS Code extension) with terminal and filesystem tool access.
 
-## 1. Prompts Used (5-10 Key Prompts)
+## 3. Use Cases
+- **Architecture & System Design:** The AI proposed and implemented the Event-Sourcing pattern to solve the traceability requirement.
+- **Backend API & Schema:** Wrote the SQLAlchemy schemas, Pydantic models, and FastAPI routes.
+- **Validation Engine:** Designed the dynamic rule execution logic.
+- **Frontend & UI:** Generated complex Tailwind CSS React components (Dashboards, Exception Queue).
+- **Data Ingestion:** Handled streaming CSV ingestion with strict idempotency and sequence guards.
+- **Testing:** Wrote `pytest` suites to verify zero-division boundaries and edge cases.
 
-| # | Prompt Summary | Purpose | Model | Output Quality |
-|---|---------------|---------|-------|----------------|
-| 1 | "Build the complete backend API, database schema, and agentic business logic for the Loan Data Verification Copilot" | Initial full-stack architecture and code generation | Claude Opus 4 | ★★★★★ — Comprehensive, production-ready code |
-| 2 | "Define Event Sourcing entities with immutable event store and chained hashing" | Core data model design | Claude Opus 4 | ★★★★★ — Correct append-only pattern |
-| 3 | "Implement validation engine with 9 hardcoded rules + dynamic AI-generated rules" | Business rule engine | Claude Opus 4 | ★★★★☆ — Good coverage, needed minor edge case handling |
-| 4 | "Build AI assistant with Gemini/Anthropic integration and sandboxed output" | LLM integration | Claude Opus 4 | ★★★★★ — Proper sandbox controls |
-| 5 | "Self-healing pipeline: detect recurring manual corrections, synthesize new rules" | Agentic automation | Claude Opus 4 | ★★★★☆ — Pattern detection logic solid |
-| 6 | "Create React frontend with Tailwind CSS, dark mode, glassmorphism" | UI design system | Claude Opus 4 | ★★★★★ — Premium aesthetics |
-| 7 | "Implement time-travel slider UI for event sourcing rewind" | Interactive audit UI | Claude Opus 4 | ★★★★☆ — Functional, visually clear |
-| 8 | *(Add your own prompts here)* | | | |
+## 4. Human Review Process
+The human developer (User) acted as the **Product Manager and DevOps lead**:
+1. **Prompting & Feedback:** The user provided the initial PDF requirements, followed by iterative feedback (e.g., "the timestamp is showing up in local time instead of UTC").
+2. **Review:** The agent generated `implementation_plan.md` artifacts before executing large refactors. The human reviewed the plan, pointed out edge cases (e.g., divide-by-zero on empty DB), and clicked "Approve".
+3. **Execution:** The AI executed the plan, editing multiple files autonomously using its tool capabilities.
 
----
+## 5. What Was Rejected (Agent Correction Examples)
+1. **Initial Aggregation Logic:** The AI initially attempted to calculate the dashboard record count by querying `ExceptionRecord` instead of `LoanEvent`. The human rejected this output because perfectly valid rows (with no exceptions) were missing from the UI. The AI corrected itself by emitting a new `FILE_UPLOADED` event.
+2. **Upload Sequencing:** The AI originally allowed uploading `servicer_update.csv` before `loan_tape.csv`. The human realized this caused conflicts and instructed the AI to build a sequence guard to reject secondary files. The AI successfully implemented the guard.
 
-## 2. Human Review Process
+## 6. Representative Prompts
+* "Output a phased Implementation Plan. Wait for my approval before executing. Phase 1: Fix the Negative Math & Calculation Bugs. Currently, the dashboard shows negative clean rows because it subtracts total exception events from total loans."
+* "Man 10k rows document manifested have it shows 533 why is it so? time also is cming wrong here rectify this as well"
+* "Now check full that from this pdf are we implementing every single thing that is listed here ?properly? every module you see properly audit trails and all audit trails of every single details and all front end and backend"
 
-### Code Review Steps
-- [ ] Verified Event Sourcing: no UPDATE/DELETE on loan_events table
-- [ ] Verified AI Sandbox: suggestions stored separately, explicit PATCH required to apply
-- [ ] Verified cryptographic hashing: SHA-256 chained events + canonical record hash
-- [ ] Verified self-healing: pattern detection threshold (3+ occurrences) working
-- [ ] Tested CSV upload with sample loan_tape.csv
-- [ ] Tested servicer_update.csv conflict detection
-- [ ] Tested time-travel rewind endpoint
-- [ ] Reviewed all 21 loan fields match PDF Section 6 schema
-- [ ] Tested role-based access (Operator, Reviewer, Consumer)
+## 7. Lessons Learned
+- **Where AI helped most:** Building the tedious boilerplate (SQLAlchemy models, Tailwind UI layouts) and designing the complex Event Sourcing hash-chain logic.
+- **Where Human Engineering Judgment was necessary:** Validating the strict business logic (e.g., enforcing that a loan tape MUST be uploaded before a servicer update) and catching logical edge cases (e.g., ensuring `total_loans == 0` didn't crash the Data Quality Score).
 
-### Manual Modifications
-*(Document any manual code changes here)*
-
-| File | Change | Reason |
-|------|--------|--------|
-| | | |
-
----
-
-## 3. Code Percentage Estimate
-
-| Category | Percentage | Notes |
-|----------|-----------|-------|
-| AI-Generated Code | ~90% | Initial scaffolding and full implementation |
-| Human-Modified Code | ~5% | Configuration, API keys, minor adjustments |
-| Human-Written Code | ~5% | Custom business logic tweaks, testing |
-| **Total** | **100%** | |
-
----
-
-## 4. Rejected AI Outputs
-
-*(Document any AI-generated code that was rejected or significantly modified)*
-
-| # | Rejected Output | Reason | Resolution |
-|---|----------------|--------|------------|
-| 1 | *(Example: AI suggested using UPDATE for loan state)* | *(Violates Event Sourcing requirement)* | *(Replaced with event append + projection)* |
-| 2 | | | |
-
----
-
-## 5. Lessons Learned
-
-### What Worked Well
-- AI-generated Event Sourcing pattern was architecturally sound from the start
-- Self-healing pipeline concept was well-structured for agentic automation
-- Role-based UI dashboards provided clear separation of concerns
-
-### Challenges
-- *(Document challenges encountered during development)*
-
-### Recommendations for Future AI-Assisted Development
-- Provide exact schema definitions upfront to minimize iteration
-- Break complex requirements into sequential phases
-- Always verify AI output against compliance constraints
-- Use the AI as a pair programmer, not as an autonomous agent
-
----
-
-## 6. Compliance Checklist (Intain PDF Sections 8-12)
-
-| Module | Status | Notes |
-|--------|--------|-------|
-| A: Ingestion | ✅ | CSV upload with 3 source types |
-| B: Validation Engine | ✅ | 9 hardcoded rules + dynamic rules |
-| C: Exception Queue | ✅ | OPEN → IN_REVIEW → RESOLVED lifecycle |
-| D: AI Review Assistant | ✅ | Sandboxed with model metadata |
-| E: Verified Record | ✅ | SHA-256 hash + verified_by + timestamp |
-| F: Audit Trail | ✅ | Every action logged as immutable event |
-| G: Dashboards | ✅ | Operator, Reviewer, Consumer views |
-| H: Verified Records API | ✅ | All 7 required endpoints implemented |
-| AI Controls (Section 9) | ✅ | Never auto-applies, explicit PATCH required |
-| Event Sourcing | ✅ | No UPDATE on loan records |
-| Self-Healing | ✅ | Pattern detection + rule synthesis |
+## 8. AI-Generated Code Percentage
+**Estimate:** 98%
+The human developer guided the high-level logic, reviewed plans, and performed QA, while the AI physically typed virtually all backend and frontend code.
