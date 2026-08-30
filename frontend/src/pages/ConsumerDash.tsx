@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Shield, Download, Hash, CheckCircle, TrendingUp, Database, Lock, ShieldCheck, Eye, Search } from 'lucide-react';
+import { Shield, Download, Hash, CheckCircle, TrendingUp, Database, Lock, ShieldCheck, Eye, Search, X } from 'lucide-react';
 import api from '../api/client';
 import StatsCard from '../components/StatsCard';
 import AuditTimeline from '../components/AuditTimeline';
@@ -310,24 +310,64 @@ export default function ConsumerDash() {
         )}
       </div>
 
-      {/* Embedded Audit Trail Inspector */}
+      {/* Glassmorphism Audit Trail Modal */}
       {selectedLoanId && (
-        <div className="glass-card p-6 animate-slide-up border-brand-500/20">
-          <h2 className="text-lg font-semibold text-surface-100 mb-4 flex items-center gap-2">
-            <Eye className="w-5 h-5 text-brand-400" />
-            Audit Trail — Loan {selectedLoanId}
-          </h2>
-          {auditLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md animate-fade-in"
+          onClick={() => setSelectedLoanId(null)}
+        >
+          <div
+            className="relative w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col rounded-2xl border border-surface-700/60 bg-surface-900/80 backdrop-blur-xl shadow-2xl shadow-black/50 animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-surface-700/50 shrink-0">
+              <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2.5">
+                <div className="p-1.5 bg-brand-500/10 rounded-lg">
+                  <Eye className="w-5 h-5 text-brand-400" />
+                </div>
+                Audit Trail
+                <span className="font-mono text-sm text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded-md">
+                  {selectedLoanId}
+                </span>
+              </h2>
+              <button
+                onClick={() => setSelectedLoanId(null)}
+                className="p-1.5 rounded-lg bg-surface-800/60 hover:bg-surface-700 border border-surface-700/50 text-surface-400 hover:text-surface-200 transition-all duration-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-          ) : (
-            <AuditTimeline
-              events={auditEvents}
-              hashChainValid={true}
-              onRewind={() => {}}
-            />
-          )}
+
+            {/* Modal Body — scrollable */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar">
+              {auditLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <div className="w-8 h-8 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+                  <span className="text-sm text-surface-400">Loading event ledger…</span>
+                </div>
+              ) : (
+                <AuditTimeline
+                  events={auditEvents}
+                  hashChainValid={true}
+                  onRewind={() => {}}
+                />
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between px-6 py-3 border-t border-surface-700/50 shrink-0 bg-surface-950/40 rounded-b-2xl">
+              <span className="text-xs text-surface-500 font-mono">
+                {auditEvents.length} event(s) · SHA-256 chained
+              </span>
+              <button
+                onClick={() => setSelectedLoanId(null)}
+                className="btn-ghost text-xs px-4 py-1.5"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
