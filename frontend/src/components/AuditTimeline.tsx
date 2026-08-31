@@ -9,19 +9,19 @@ interface AuditTimelineProps {
 }
 
 const EVENT_CONFIG: Record<EventType, { icon: React.ReactNode; color: string; label: string }> = {
-  LOAN_IMPORTED:        { icon: <Upload className="w-3.5 h-3.5" />,        color: 'bg-brand-500',   label: 'Imported' },
-  VALIDATION_FAILED:    { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'bg-danger-500',  label: 'Validation Failed' },
-  AI_PATCH_SUGGESTED:   { icon: <Bot className="w-3.5 h-3.5" />,           color: 'bg-purple-500',  label: 'AI Suggestion' },
-  HUMAN_EDIT_APPLIED:   { icon: <User className="w-3.5 h-3.5" />,          color: 'bg-info-500',    label: 'Human Edit' },
-  AI_SUGGESTION_APPLIED:{ icon: <Bot className="w-3.5 h-3.5" />,           color: 'bg-success-500', label: 'AI Fix Applied' },
-  LOAN_VERIFIED:        { icon: <Shield className="w-3.5 h-3.5" />,        color: 'bg-success-500', label: 'Verified' },
-  COMMENT_ADDED:        { icon: <User className="w-3.5 h-3.5" />,          color: 'bg-surface-500', label: 'Comment' },
-  CONFLICT_DETECTED:    { icon: <FileWarning className="w-3.5 h-3.5" />,   color: 'bg-warning-500', label: 'Conflict' },
-  DOCUMENT_MISSING:     { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'bg-warning-500', label: 'Doc Missing' },
-  RULE_GENERATED:       { icon: <Cog className="w-3.5 h-3.5" />,           color: 'bg-brand-500',   label: 'Rule Generated' },
-  EXCEPTION_RETURNED:   { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'bg-warning-500', label: 'Returned for Rework' },
-  EXCEPTION_RESOLVED:   { icon: <CheckCircle className="w-3.5 h-3.5" />,   color: 'bg-success-500', label: 'Exception Resolved' },
-  LOAN_REJECTED:        { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'bg-danger-500',  label: 'Loan Rejected' },
+  LOAN_IMPORTED: { icon: <Upload className="w-3.5 h-3.5" />, color: 'bg-brand-500', label: 'Imported' },
+  VALIDATION_FAILED: { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'bg-danger-500', label: 'Validation Failed' },
+  AI_PATCH_SUGGESTED: { icon: <Bot className="w-3.5 h-3.5" />, color: 'bg-purple-500', label: 'AI Suggestion' },
+  HUMAN_EDIT_APPLIED: { icon: <User className="w-3.5 h-3.5" />, color: 'bg-info-500', label: 'Human Edit' },
+  AI_SUGGESTION_APPLIED: { icon: <Bot className="w-3.5 h-3.5" />, color: 'bg-success-500', label: 'AI Fix Applied' },
+  LOAN_VERIFIED: { icon: <Shield className="w-3.5 h-3.5" />, color: 'bg-success-500', label: 'Verified' },
+  COMMENT_ADDED: { icon: <User className="w-3.5 h-3.5" />, color: 'bg-surface-500', label: 'Comment' },
+  CONFLICT_DETECTED: { icon: <FileWarning className="w-3.5 h-3.5" />, color: 'bg-warning-500', label: 'Conflict' },
+  DOCUMENT_MISSING: { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'bg-warning-500', label: 'Doc Missing' },
+  RULE_GENERATED: { icon: <Cog className="w-3.5 h-3.5" />, color: 'bg-brand-500', label: 'Rule Generated' },
+  EXCEPTION_RETURNED: { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'bg-warning-500', label: 'Returned for Rework' },
+  EXCEPTION_RESOLVED: { icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'bg-success-500', label: 'Exception Resolved' },
+  LOAN_REJECTED: { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'bg-danger-500', label: 'Loan Rejected' },
 };
 
 export default function AuditTimeline({ events, hashChainValid, onRewind }: AuditTimelineProps) {
@@ -44,9 +44,8 @@ export default function AuditTimeline({ events, hashChainValid, onRewind }: Audi
           <span className="text-xs text-surface-500">({events.length} events)</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className={`flex items-center gap-1.5 text-xs font-medium ${
-            hashChainValid ? 'text-success-400' : 'text-danger-400'
-          }`}>
+          <div className={`flex items-center gap-1.5 text-xs font-medium ${hashChainValid ? 'text-success-400' : 'text-danger-400'
+            }`}>
             <Hash className="w-3.5 h-3.5" />
             {hashChainValid ? 'Chain Valid' : 'Chain Broken!'}
           </div>
@@ -74,16 +73,16 @@ export default function AuditTimeline({ events, hashChainValid, onRewind }: Audi
               Event {sliderIdx + 1} / {events.length}
             </span>
           </div>
-          
+
           <div className="relative w-full h-10 flex items-center group">
             {/* Scrubber track */}
             <div className="absolute w-full h-2 bg-surface-800 rounded-full overflow-hidden border border-surface-700/50">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-brand-600 to-brand-400"
                 style={{ width: `${(sliderIdx / (events.length - 1 || 1)) * 100}%` }}
               />
             </div>
-            
+
             <input
               type="range"
               min={0}
@@ -92,9 +91,9 @@ export default function AuditTimeline({ events, hashChainValid, onRewind }: Audi
               onChange={(e) => setSliderIdx(Number(e.target.value))}
               className="absolute w-full h-full opacity-0 cursor-pointer z-20"
             />
-            
+
             {/* Custom scrubber thumb (visual only) */}
-            <div 
+            <div
               className="absolute h-5 w-5 bg-surface-50 border-2 border-brand-400 rounded-full shadow-[0_0_10px_rgba(45,212,191,0.5)] z-10 pointer-events-none transition-transform group-hover:scale-125"
               style={{ left: `calc(${(sliderIdx / (events.length - 1 || 1)) * 100}% - 10px)` }}
             />
@@ -111,7 +110,7 @@ export default function AuditTimeline({ events, hashChainValid, onRewind }: Audi
               ? new Date(events[events.length - 1].timestamp).toLocaleDateString()
               : 'Current'}</span>
           </div>
-          
+
           <button onClick={handleRewind} className="btn-primary mt-5 text-sm w-full justify-center shadow-[0_0_15px_rgba(45,212,191,0.2)]">
             <Clock className="w-4 h-4" />
             Reconstruct State at Timestamp
@@ -132,20 +131,17 @@ export default function AuditTimeline({ events, hashChainValid, onRewind }: Audi
           return (
             <div
               key={event.id}
-              className={`flex gap-4 transition-all duration-300 ${
-                dimmed ? 'opacity-40 grayscale-[50%]' : ''
-              }`}
+              className={`flex gap-4 transition-all duration-300 ${dimmed ? 'opacity-40 grayscale-[50%]' : ''
+                }`}
             >
               {/* Timeline column */}
               <div className="flex flex-col items-center">
-                <div className={`timeline-dot border-4 ${
-                  dimmed ? 'border-danger-500/50 bg-danger-500/20' : `border-surface-900 ${config.color}`
-                }`}>
+                <div className={`timeline-dot border-4 ${dimmed ? 'border-danger-500/50 bg-danger-500/20' : `border-surface-900 ${config.color}`
+                  }`}>
                 </div>
                 {i < events.length - 1 && (
-                  <div className={`w-0.5 h-16 ${
-                    dimmed ? 'bg-danger-500/30' : 'bg-surface-700'
-                  }`} />
+                  <div className={`w-0.5 h-16 ${dimmed ? 'bg-danger-500/30' : 'bg-surface-700'
+                    }`} />
                 )}
               </div>
 
@@ -163,9 +159,8 @@ export default function AuditTimeline({ events, hashChainValid, onRewind }: Audi
                   </span>
                 </div>
                 {(event.payload?.reason || event.username || event.payload?.resolved_by || event.payload?.rejected_by || event.payload?.verified_by || event.event_hash) && (
-                  <div className={`mt-2 text-xs font-mono max-w-md p-2 rounded-md ${
-                    dimmed ? 'bg-danger-950/30 text-danger-500/50' : 'bg-surface-900/50 text-surface-400'
-                  }`}>
+                  <div className={`mt-2 text-xs font-mono max-w-md p-2 rounded-md ${dimmed ? 'bg-danger-950/30 text-danger-500/50' : 'bg-surface-900/50 text-surface-400'
+                    }`}>
                     {event.event_hash && (
                       <div className="mb-2 flex items-start justify-between gap-2 group">
                         <span className="text-surface-500 font-bold break-all leading-tight">
