@@ -15,11 +15,11 @@ interface ExceptionCardProps {
 export default function ExceptionCard({ exception, onResolve, lockedById, lockedByUsername }: ExceptionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
-  const [aiData, setAiData] = useState<AISuggestion | null>(exception.ai_suggestion);
+  const [aiData, setAiData] = useState<AISuggestion | null>((exception.ai_suggestion as unknown as AISuggestion) || null);
   const [aiError, setAiError] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [comment, setComment] = useState('');
-  
+
   // Manual Resolution Modal State
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualValue, setManualValue] = useState('');
@@ -50,7 +50,7 @@ export default function ExceptionCard({ exception, onResolve, lockedById, locked
     try {
       const res = await api.post(`/ai/explain/${exception.id}`);
       setAiData(res.data.suggestion);
-    } catch { 
+    } catch {
       setAiError(true);
     }
     setLoadingAI(false);
@@ -205,7 +205,7 @@ export default function ExceptionCard({ exception, onResolve, lockedById, locked
       {showManualModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-md animate-fade-in" onClick={() => setShowManualModal(false)}>
           <div className="relative w-full max-w-md mx-4 p-6 rounded-2xl border border-surface-700/60 bg-surface-900/90 backdrop-blur-xl shadow-2xl shadow-black/50 animate-slide-up" onClick={(e) => e.stopPropagation()}>
-            
+
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-surface-100 flex items-center gap-2">
                 <Edit3 className="w-5 h-5 text-brand-400" />

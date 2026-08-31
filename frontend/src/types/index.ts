@@ -73,7 +73,10 @@ export type EventType =
   | 'COMMENT_ADDED'
   | 'CONFLICT_DETECTED'
   | 'DOCUMENT_MISSING'
-  | 'RULE_GENERATED';
+  | 'RULE_GENERATED'
+  | 'EXCEPTION_RETURNED'
+  | 'EXCEPTION_RESOLVED'
+  | 'LOAN_REJECTED';
 
 export interface LoanEvent {
   id: number;
@@ -204,6 +207,7 @@ export interface SummaryResponse {
   recent_uploads: Array<{
     filename: string;
     records: number;
+    exceptions?: number;
     uploaded_at: string | null;
   }>;
   data_quality_score: number;

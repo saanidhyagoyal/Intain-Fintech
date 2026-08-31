@@ -175,15 +175,15 @@ export default function AuditTimeline({ events, hashChainValid, onRewind }: Audi
                         </button>
                       </div>
                     )}
-                    {event.payload?.reason && (
+                    {Boolean(event.payload?.reason) && (
                       <div className="mt-1 text-warning-400 font-sans">
-                        <span className="font-semibold">Reason:</span> {event.payload.reason}
+                        <span className="font-semibold">Reason:</span> {String(event.payload.reason)}
                       </div>
                     )}
-                    {(event.username || event.payload?.resolved_by || event.payload?.rejected_by || event.payload?.verified_by) && (
+                    {Boolean(event.username || event.payload?.resolved_by || event.payload?.rejected_by || event.payload?.verified_by) && (
                       <div className="mt-1 text-surface-300 font-sans">
                         <User className="w-3 h-3 inline mr-1" />
-                        {event.username || event.payload?.resolved_by || event.payload?.rejected_by || event.payload?.verified_by}
+                        {String(event.username || event.payload?.resolved_by || event.payload?.rejected_by || event.payload?.verified_by)}
                       </div>
                     )}
                   </div>

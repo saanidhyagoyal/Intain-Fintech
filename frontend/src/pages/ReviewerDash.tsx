@@ -91,7 +91,7 @@ export default function ReviewerDash() {
   }, {} as Record<string, ExceptionRecord[]>);
 
   const filteredPortfolio = verifiedLoansList.filter(v => 
-    v.loan.loan_id.toLowerCase().includes(searchLoanId.toLowerCase())
+    v.loan?.loan_id?.toLowerCase().includes(searchLoanId.toLowerCase()) ?? false
   );
 
   // Get unique loan IDs that have all exceptions resolved
