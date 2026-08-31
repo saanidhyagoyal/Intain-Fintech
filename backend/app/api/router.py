@@ -33,4 +33,4 @@ api_router.include_router(ai.router, prefix="/ai", tags=["AI Assistant"])
 api_router.include_router(summary.router, tags=["Dashboard"])
 
 # ── HITL Rules Engine ────────────────────────────────────────
-api_router.include_router(rules.router)
+api_router.include_router(rules.router, prefix="/rules", tags=["Rules Engine"])
