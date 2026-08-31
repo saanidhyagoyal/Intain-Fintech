@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 
 from app.models.event import EventType, LoanEvent
 from app.models.exception import ExceptionRecord, ExceptionStatus, Severity
-from app.models.rule import RuleType, ValidationRule
+from app.models.rule import RuleSource, RuleStatus, ValidationRule
 from app.services.event_store import append_event
 
 
@@ -63,10 +63,10 @@ class ValidationEngine:
         self._dynamic_rules = self._load_dynamic_rules()
 
     def _load_dynamic_rules(self) -> list[ValidationRule]:
-        """Load all active AI-generated rules from the database."""
+        """Load all active AI-generated or manual rules from the database."""
         return (
             self.db.query(ValidationRule)
-            .filter(ValidationRule.is_active == True, ValidationRule.rule_type == RuleType.AI_GENERATED)
+            .filter(ValidationRule.status == RuleStatus.ACTIVE, ValidationRule.source != RuleSource.HARDCODED)
             .all()
         )
 
@@ -325,7 +325,65 @@ class ValidationEngine:
     def _evaluate_dynamic_rule(
         self, loan_id: str, state: dict, rule: ValidationRule
     ) -> Optional[dict]:
-        """Evaluate an AI-generated dynamic rule against loan state."""
+        """Evaluate an AI-generated dynamic rule against loan state.
+        Supports both legacy condition/transformation JSON and new logic_payload format."""
+
+        # ── NEW: logic_payload rules (AI-compiled) ───────────
+        if rule.logic_payload:
+            try:
+                logic = json.loads(rule.logic_payload)
+                field = logic.get("field")
+                operator = logic.get("operator")
+                target = logic.get("target_value")
+                action = logic.get("action")
+                action_value = logic.get("action_value")
+                field_val = state.get(field)
+
+                triggered = False
+
+                if operator == "equals":
+                    triggered = str(field_val) == str(target)
+                elif operator == "greater_than":
+                    try:
+                        triggered = float(field_val) > float(target)
+                    except (ValueError, TypeError):
+                        pass
+                elif operator == "less_than":
+                    try:
+                        triggered = float(field_val) < float(target)
+                    except (ValueError, TypeError):
+                        pass
+                elif operator == "is_empty":
+                    triggered = field_val is None or str(field_val).strip() == ""
+
+                if triggered:
+                    # Determine the expected/description based on action
+                    if action == "replace":
+                        expected = str(action_value)
+                        desc = rule.error_message or f"Value '{field_val}' should be replaced with '{action_value}'"
+                    elif action == "math_absolute":
+                        expected = f"abs({field_val})"
+                        desc = rule.error_message or f"Value '{field_val}' should be converted to its absolute value"
+                    elif action == "flag_review":
+                        expected = f"Needs review ({operator} {target})"
+                        desc = rule.error_message or f"Field '{field}' value '{field_val}' triggered review ({operator} {target})"
+                    else:
+                        expected = "review required"
+                        desc = rule.error_message or f"Dynamic rule triggered on {field}"
+
+                    return {
+                        "rule_id": f"COMPILED_{rule.id}_{rule.rule_name}",
+                        "field_name": field,
+                        "expected_value": expected,
+                        "actual_value": str(field_val),
+                        "description": desc,
+                        "severity": rule.severity,
+                    }
+            except (json.JSONDecodeError, KeyError, TypeError):
+                pass
+            return None
+
+        # ── LEGACY: condition_json / transformation_json rules ──
         field_val = state.get(rule.field_name)
         if field_val is None:
             return None
@@ -336,7 +394,6 @@ class ValidationEngine:
                 transform = json.loads(rule.transformation_json)
                 mapping = transform.get("map", {})
                 if str(field_val) in mapping:
-                    # This is a fixable issue – the value should be mapped
                     correct_val = mapping[str(field_val)]
                     return {
                         "rule_id": f"DYNAMIC_{rule.id}_{rule.rule_name}",

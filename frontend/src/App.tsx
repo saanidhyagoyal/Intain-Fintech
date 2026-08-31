@@ -5,8 +5,8 @@ import OperatorDash from './pages/OperatorDash';
 import ReviewerDash from './pages/ReviewerDash';
 import ConsumerDash from './pages/ConsumerDash';
 import LoanDetail from './pages/LoanDetail';
-import AdminDash from './pages/AdminDash';
 import AuditTrailDash from './pages/AuditTrailDash';
+import RulesDictionaryDash from './pages/RulesDictionaryDash';
 
 function getUser() {
   try {
@@ -43,8 +43,6 @@ function Dashboard() {
       return <ReviewerDash />;
     case 'DATA_CONSUMER':
       return <ConsumerDash />;
-    case 'ADMIN':
-      return <AdminDash />;
     default:
       return <OperatorDash />;
   }
@@ -68,29 +66,23 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
 
           {/* Shared routes (can be caught by Dashboard or directly) */}
-          <Route path="/upload" element={<RoleGuard allowed={['ADMIN', 'DATA_OPERATOR']}><OperatorDash /></RoleGuard>} />
-          <Route path="/compliance" element={<RoleGuard allowed={['ADMIN', 'DATA_OPERATOR']}><OperatorDash /></RoleGuard>} />
+          <Route path="/upload" element={<RoleGuard allowed={['DATA_OPERATOR']}><OperatorDash /></RoleGuard>} />
+          <Route path="/compliance" element={<RoleGuard allowed={['DATA_OPERATOR']}><OperatorDash /></RoleGuard>} />
 
           {/* Reviewer routes */}
-          <Route path="/exceptions" element={<RoleGuard allowed={['ADMIN', 'REVIEWER']}><ReviewerDash /></RoleGuard>} />
-          <Route path="/approved" element={<RoleGuard allowed={['ADMIN', 'REVIEWER']}><ReviewerDash /></RoleGuard>} />
+          <Route path="/exceptions" element={<RoleGuard allowed={['REVIEWER']}><ReviewerDash /></RoleGuard>} />
+          <Route path="/approved" element={<RoleGuard allowed={['REVIEWER']}><ReviewerDash /></RoleGuard>} />
+          <Route path="/rules-dictionary" element={<RoleGuard allowed={['REVIEWER']}><RulesDictionaryDash /></RoleGuard>} />
 
           {/* Consumer routes */}
-          <Route path="/verified" element={<RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}><ConsumerDash /></RoleGuard>} />
-          <Route path="/validation" element={<RoleGuard allowed={['ADMIN', 'DATA_CONSUMER']}><ConsumerDash /></RoleGuard>} />
+          <Route path="/verified" element={<RoleGuard allowed={['DATA_CONSUMER']}><ConsumerDash /></RoleGuard>} />
+          <Route path="/validation" element={<RoleGuard allowed={['DATA_CONSUMER']}><ConsumerDash /></RoleGuard>} />
 
           {/* Audit routes */}
-          <Route path="/audit" element={<RoleGuard allowed={['ADMIN', 'REVIEWER', 'DATA_CONSUMER']}><AuditTrailDash /></RoleGuard>} />
+          <Route path="/audit" element={<RoleGuard allowed={['REVIEWER', 'DATA_CONSUMER']}><AuditTrailDash /></RoleGuard>} />
 
           {/* Fallback routes */}
           <Route path="/loans/:loanId" element={<LoanDetail />} />
-
-          {/* Admin */}
-          <Route path="/admin" element={
-            <RoleGuard allowed={['ADMIN']}>
-              <AdminDash />
-            </RoleGuard>
-          } />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

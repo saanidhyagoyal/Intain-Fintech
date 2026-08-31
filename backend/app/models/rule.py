@@ -14,15 +14,21 @@ Rule types:
 from datetime import datetime, timezone
 from enum import Enum as PyEnum
 
-from sqlalchemy import Boolean, DateTime, Enum, Integer, String, Text
+from sqlalchemy import DateTime, Enum, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
 
 
-class RuleType(str, PyEnum):
+class RuleSource(str, PyEnum):
     HARDCODED = "HARDCODED"
-    AI_GENERATED = "AI_GENERATED"
+    AI_SUGGESTED = "AI_SUGGESTED"
+    MANUAL = "MANUAL"
+
+class RuleStatus(str, PyEnum):
+    PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+    REJECTED = "REJECTED"
 
 
 class ValidationRule(Base):
@@ -40,10 +46,10 @@ class ValidationRule(Base):
     rule_name: Mapped[str] = mapped_column(
         String(200), unique=True, nullable=False,
     )
-    rule_type: Mapped[str] = mapped_column(
-        Enum(RuleType, native_enum=False, length=15),
+    source: Mapped[str] = mapped_column(
+        Enum(RuleSource, native_enum=False, length=15),
         nullable=False,
-        default=RuleType.HARDCODED,
+        default=RuleSource.HARDCODED,
     )
 
     # ── Scope ────────────────────────────────────────────────
@@ -69,9 +75,18 @@ class ValidationRule(Base):
         String(10), nullable=False, default="MEDIUM",
     )
 
+    # ── AI-Compiled Logic (structured rule payload) ───────────
+    logic_payload: Mapped[str] = mapped_column(
+        Text, nullable=True,
+        comment='AI-compiled structured rule, e.g. {"field":"interest_rate","operator":"greater_than","target_value":100,"action":"flag_review","action_value":null}',
+    )
+
     # ── Lifecycle ────────────────────────────────────────────
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, index=True,
+    status: Mapped[str] = mapped_column(
+        Enum(RuleStatus, native_enum=False, length=15),
+        nullable=False,
+        default=RuleStatus.ACTIVE,
+        index=True,
     )
     created_by: Mapped[str] = mapped_column(
         String(50), nullable=True,
@@ -98,6 +113,6 @@ class ValidationRule(Base):
 
     def __repr__(self) -> str:
         return (
-            f"<ValidationRule {self.rule_name} ({self.rule_type}) "
-            f"field={self.field_name} active={self.is_active}>"
+            f"<ValidationRule {self.rule_name} ({self.source}) "
+            f"field={self.field_name} status={self.status}>"
         )

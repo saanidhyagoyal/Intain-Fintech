@@ -162,10 +162,24 @@ export default function AuditTimeline({ events, hashChainValid, onRewind }: Audi
                     {new Date(event.timestamp).toLocaleString()}
                   </span>
                 </div>
-                {(event.payload?.reason || event.username || event.payload?.resolved_by || event.payload?.rejected_by || event.payload?.verified_by) && (
-                  <div className={`mt-2 text-xs font-mono truncate max-w-md p-2 rounded-md ${
+                {(event.payload?.reason || event.username || event.payload?.resolved_by || event.payload?.rejected_by || event.payload?.verified_by || event.event_hash) && (
+                  <div className={`mt-2 text-xs font-mono max-w-md p-2 rounded-md ${
                     dimmed ? 'bg-danger-950/30 text-danger-500/50' : 'bg-surface-900/50 text-surface-400'
                   }`}>
+                    {event.event_hash && (
+                      <div className="mb-2 flex items-start justify-between gap-2 group">
+                        <span className="text-surface-500 font-bold break-all leading-tight">
+                          {event.event_hash}
+                        </span>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(event.event_hash)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-surface-500 hover:text-brand-400 p-1 flex-shrink-0"
+                          title="Copy Full Hash"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        </button>
+                      </div>
+                    )}
                     {event.payload?.reason && (
                       <div className="mt-1 text-warning-400 font-sans">
                         <span className="font-semibold">Reason:</span> {event.payload.reason}

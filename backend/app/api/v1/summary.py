@@ -11,8 +11,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.event import EventType, LoanEvent
-from app.models.exception import ExceptionRecord, ExceptionStatus, Severity
-from app.models.rule import RuleType, ValidationRule
+from app.models.exception import ExceptionRecord, ExceptionStatus
+from app.models.rule import RuleSource, ValidationRule
 from app.schemas.audit import SummaryResponse
 
 router = APIRouter()
@@ -93,7 +93,7 @@ async def get_summary(
     # Self-healing rules
     self_healing_rules = (
         db.query(func.count(ValidationRule.id))
-        .filter(ValidationRule.rule_type == RuleType.AI_GENERATED)
+        .filter(ValidationRule.source == RuleSource.AI_SUGGESTED)
         .scalar() or 0
     )
 

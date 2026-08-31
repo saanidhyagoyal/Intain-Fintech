@@ -131,7 +131,7 @@ async def get_loan(
 
 @router.post(
     "/loans/bulk-verify-clean",
-    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
+    dependencies=[Depends(require_role(UserRole.REVIEWER))],
 )
 async def bulk_verify_clean_loans(
     db: Session = Depends(get_db),
@@ -228,7 +228,7 @@ async def bulk_verify_clean_loans(
 
 @router.post(
     "/loans/{loan_id}/reject",
-    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
+    dependencies=[Depends(require_role(UserRole.REVIEWER))],
 )
 async def reject_loan(
     loan_id: str,
@@ -254,7 +254,7 @@ async def reject_loan(
 
 @router.post(
     "/loans/{loan_id}/return",
-    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
+    dependencies=[Depends(require_role(UserRole.REVIEWER))],
 )
 async def return_loan(
     loan_id: str,
@@ -291,7 +291,7 @@ async def return_loan(
 
 @router.post(
     "/loans/{loan_id}/revoke",
-    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
+    dependencies=[Depends(require_role(UserRole.REVIEWER))],
 )
 async def revoke_loan(
     loan_id: str,
@@ -322,31 +322,36 @@ async def validate_hash(
     current_user: dict = Depends(get_current_user),
 ):
     """Validate a cryptographic hash to see its status on the ledger."""
-    # Find any LOAN_VERIFIED event that generated this hash
+    # 1. Check if it's a direct event_hash on the ledger
+    event = db.query(LoanEvent).filter(LoanEvent.event_hash == hash_val).first()
+
+    # 2. Check if it's a record_hash inside a LOAN_VERIFIED payload
     verify_event = (
         db.query(LoanEvent)
         .filter(LoanEvent.event_type == EventType.LOAN_VERIFIED)
         .filter(LoanEvent.payload_json.like(f'%"{hash_val}"%'))
         .first()
     )
-    if not verify_event:
+    
+    if not verify_event and not event:
         return {"status": "error", "message": "Hash not found on ledger."}
         
-    loan_id = verify_event.loan_id
-    
-    # Check if there is a subsequent REVOKED event for this loan
-    revoke_event = (
-        db.query(LoanEvent)
-        .filter(LoanEvent.loan_id == loan_id)
-        .filter(LoanEvent.event_type == EventType.VERIFICATION_REVOKED)
-        .order_by(LoanEvent.timestamp.desc())
-        .first()
-    )
-    
-    if revoke_event:
-        payload = json.loads(revoke_event.payload_json)
-        reason = payload.get("reason", "Unknown reason")
-        return {"status": "revoked", "reason": reason}
+    if verify_event:
+        loan_id = verify_event.loan_id
         
+        # Check if there is a subsequent REVOKED event for this loan
+        revoke_event = (
+            db.query(LoanEvent)
+            .filter(LoanEvent.loan_id == loan_id)
+            .filter(LoanEvent.event_type == EventType.VERIFICATION_REVOKED)
+            .order_by(LoanEvent.timestamp.desc())
+            .first()
+        )
+        
+        if revoke_event:
+            payload = json.loads(revoke_event.payload_json)
+            reason = payload.get("reason", "Unknown reason")
+            return {"status": "revoked", "reason": reason}
+            
     return {"status": "valid"}
 

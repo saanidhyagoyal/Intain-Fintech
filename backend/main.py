@@ -42,28 +42,12 @@ def _seed_users():
         if db.query(User).count() == 0:
             defaults = [
                 User(
-                    username=settings.SEED_ADMIN_USER,
-                    email=f"{settings.SEED_ADMIN_USER}@intain.io",
-                    hashed_password=hashlib.sha256(
-                        settings.SEED_ADMIN_PASS.encode()
-                    ).hexdigest(),
-                    role=UserRole.ADMIN,
-                ),
-                User(
                     username=settings.SEED_OPERATOR_USER,
                     email=f"{settings.SEED_OPERATOR_USER}@intain.io",
                     hashed_password=hashlib.sha256(
                         settings.SEED_OPERATOR_PASS.encode()
                     ).hexdigest(),
                     role=UserRole.DATA_OPERATOR,
-                ),
-                User(
-                    username=settings.SEED_REVIEWER_USER,
-                    email=f"{settings.SEED_REVIEWER_USER}@intain.io",
-                    hashed_password=hashlib.sha256(
-                        settings.SEED_REVIEWER_PASS.encode()
-                    ).hexdigest(),
-                    role=UserRole.REVIEWER,
                 ),
                 User(
                     username=settings.REVIEWER_A_USERNAME,

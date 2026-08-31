@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Upload, AlertCircle, Shield, Database,
-  LogOut, ChevronRight, Sparkles, FileSearch, Cpu, Lock, History, CheckCircle,
+  LogOut, ChevronRight, Sparkles, Lock, History, CheckCircle, Book
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -19,14 +19,12 @@ export default function Sidebar({ role, username }: SidebarProps) {
   };
 
   const roleLabel: Record<string, string> = {
-    ADMIN: 'Master Admin',
     DATA_OPERATOR: 'Data Operator',
     REVIEWER: 'Reviewer',
     DATA_CONSUMER: 'Data Consumer',
   };
 
   const roleColor: Record<string, string> = {
-    ADMIN: 'from-brand-500 to-info-500',
     DATA_OPERATOR: 'from-brand-500 to-blue-500',
     REVIEWER: 'from-purple-500 to-pink-500',
     DATA_CONSUMER: 'from-emerald-500 to-teal-500',
@@ -56,63 +54,7 @@ export default function Sidebar({ role, username }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
 
-        {/* ─── ADMIN: Grouped Sections ─── */}
-        {role === 'ADMIN' && (
-          <>
-            <NavLink to="/" end className={navLinkClass}>
-              <Shield className="w-4 h-4" />
-              <span className="flex-1">Master Admin</span>
-              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </NavLink>
 
-            <div className="px-3 pt-4 pb-1">
-              <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Operations</span>
-            </div>
-            <NavLink to="/upload" className={navLinkClass}>
-              <Upload className="w-4 h-4" />
-              <span className="flex-1">Ingestion Hub</span>
-              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </NavLink>
-            <NavLink to="/compliance" className={navLinkClass}>
-              <Database className="w-4 h-4" />
-              <span className="flex-1">Health & Compliance</span>
-              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </NavLink>
-
-            <div className="px-3 pt-4 pb-1">
-              <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Triage</span>
-            </div>
-            <NavLink to="/exceptions" className={navLinkClass}>
-              <AlertCircle className="w-4 h-4" />
-              <span className="flex-1">Triage Queue</span>
-              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </NavLink>
-            <NavLink to="/approved" className={navLinkClass}>
-              <CheckCircle className="w-4 h-4" />
-              <span className="flex-1">Approved Portfolio</span>
-              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </NavLink>
-            <NavLink to="/audit" className={navLinkClass}>
-              <History className="w-4 h-4" />
-              <span className="flex-1">Audit Trail</span>
-              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </NavLink>
-
-            <div className="px-3 pt-4 pb-1">
-              <span className="text-[10px] font-bold text-surface-600 uppercase tracking-widest">Consumer Ledger</span>
-            </div>
-            <NavLink to="/verified" className={navLinkClass}>
-              <Lock className="w-4 h-4" />
-              <span className="flex-1">Asset Ledger</span>
-              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </NavLink>
-            <NavLink to="/validation" className={navLinkClass}>
-              <Shield className="w-4 h-4" />
-              <span className="flex-1">Crypto Validation</span>
-              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </NavLink>
-          </>
-        )}
 
         {/* ─── DATA OPERATOR: Ingestion only ─── */}
         {role === 'DATA_OPERATOR' && (
@@ -141,6 +83,11 @@ export default function Sidebar({ role, username }: SidebarProps) {
             <NavLink to="/approved" className={navLinkClass}>
               <CheckCircle className="w-4 h-4" />
               <span className="flex-1">Approved Portfolio</span>
+              <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </NavLink>
+            <NavLink to="/rules-dictionary" className={navLinkClass}>
+              <Book className="w-4 h-4" />
+              <span className="flex-1">Rules Dictionary</span>
               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </NavLink>
             <NavLink to="/audit" className={navLinkClass}>

@@ -10,13 +10,6 @@ import api from '../api/client';
  */
 const DEMO_CREDENTIALS = [
   {
-    label: 'Admin',
-    user: import.meta.env.VITE_DEMO_ADMIN_USER || '',
-    pass: import.meta.env.VITE_DEMO_ADMIN_PASS || '',
-    icon: <Shield className="w-4 h-4 text-brand-400" />,
-    desc: 'Full system access',
-  },
-  {
     label: 'Operator',
     user: import.meta.env.VITE_DEMO_OPERATOR_USER || '',
     pass: import.meta.env.VITE_DEMO_OPERATOR_PASS || '',
@@ -24,11 +17,18 @@ const DEMO_CREDENTIALS = [
     desc: 'Upload & ingest CSVs',
   },
   {
-    label: 'Reviewer',
-    user: import.meta.env.VITE_DEMO_REVIEWER_USER || '',
-    pass: import.meta.env.VITE_DEMO_REVIEWER_PASS || '',
+    label: 'Reviewer A',
+    user: import.meta.env.VITE_DEMO_REVIEWER_A_USER || '',
+    pass: import.meta.env.VITE_DEMO_REVIEWER_A_PASS || '',
     icon: <Bot className="w-4 h-4 text-warning-400" />,
-    desc: 'Exception triage & verify',
+    desc: 'Exception triage (A)',
+  },
+  {
+    label: 'Reviewer B',
+    user: import.meta.env.VITE_DEMO_REVIEWER_B_USER || '',
+    pass: import.meta.env.VITE_DEMO_REVIEWER_B_PASS || '',
+    icon: <Shield className="w-4 h-4 text-warning-400" />,
+    desc: 'Exception triage (B)',
   },
   {
     label: 'Consumer',

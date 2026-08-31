@@ -51,7 +51,7 @@ def db_session(db_engine):
                 username="admin",
                 email="admin@test.io",
                 hashed_password=hashlib.sha256(b"admin123").hexdigest(),
-                role=UserRole.ADMIN,
+                role=UserRole.REVIEWER,
             ),
             User(
                 username="operator",

@@ -24,7 +24,6 @@ _bearer = HTTPBearer(auto_error=False)
 
 # ── Roles ─────────────────────────────────────────────────────
 class UserRole(str, Enum):
-    ADMIN = "ADMIN"
     DATA_OPERATOR = "DATA_OPERATOR"
     REVIEWER = "REVIEWER"
     DATA_CONSUMER = "DATA_CONSUMER"

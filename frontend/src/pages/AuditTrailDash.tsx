@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, History, ShieldAlert } from 'lucide-react';
+import { Search, History, ShieldAlert, CheckCircle, AlertTriangle } from 'lucide-react';
 import api from '../api/client';
 import AuditTimeline from '../components/AuditTimeline';
 import type { LoanEvent } from '../types';
@@ -10,6 +10,25 @@ export default function AuditTrailDash() {
   const [events, setEvents] = useState<LoanEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [hashChainValid, setHashChainValid] = useState(true);
+
+  const [integrityStatus, setIntegrityStatus] = useState<'idle' | 'loading' | 'success' | 'failed'>('idle');
+  const [integrityResult, setIntegrityResult] = useState<{ total?: number; error?: string; broken_id?: number }>({});
+
+  const checkLedgerIntegrity = async () => {
+    setIntegrityStatus('loading');
+    setIntegrityResult({});
+    try {
+      const res = await api.get('/audit/validate-ledger');
+      setIntegrityStatus('success');
+      setIntegrityResult({ total: res.data.total_records_checked });
+    } catch (err: any) {
+      setIntegrityStatus('failed');
+      setIntegrityResult({ 
+        error: err.response?.data?.detail?.message || 'Ledger validation failed',
+        broken_id: err.response?.data?.detail?.broken_at_id
+      });
+    }
+  };
 
   const searchAuditTrail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,13 +50,40 @@ export default function AuditTrailDash() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-surface-100 flex items-center gap-2">
-          <History className="w-6 h-6 text-brand-400" />
-          Audit Trail Lifecycle
-        </h1>
-        <p className="text-surface-400 mt-1">Inspect the immutable compliance history of any loan</p>
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-2xl font-bold text-surface-100 flex items-center gap-2">
+            <History className="w-6 h-6 text-brand-400" />
+            Audit Trail Lifecycle
+          </h1>
+          <p className="text-surface-400 mt-1">Inspect the immutable compliance history of any loan</p>
+        </div>
+        <button
+          onClick={checkLedgerIntegrity}
+          disabled={integrityStatus === 'loading'}
+          className="btn-primary shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+        >
+          <ShieldAlert className="w-4 h-4" />
+          {integrityStatus === 'loading' ? 'Validating Ledger...' : 'Run Full Ledger Integrity Check'}
+        </button>
       </div>
+
+      {integrityStatus === 'success' && (
+        <div className="bg-success-500/10 border border-success-500/20 text-success-400 p-4 rounded-xl flex items-center gap-3">
+          <CheckCircle className="w-5 h-5" />
+          Cryptographic chain validated across {integrityResult.total} records.
+        </div>
+      )}
+
+      {integrityStatus === 'failed' && (
+        <div className="bg-danger-500/10 border border-danger-500/20 text-danger-400 p-4 rounded-xl flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5" />
+          <div>
+            <div className="font-bold">COMPLIANCE BREACH DETECTED</div>
+            <div>{integrityResult.error}</div>
+          </div>
+        </div>
+      )}
 
       <div className="glass-card p-6">
         <form onSubmit={searchAuditTrail} className="flex gap-4 mb-8">

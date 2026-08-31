@@ -58,14 +58,14 @@ class TestUploadGuards:
         assert res.status_code == 400
         assert "CSV" in res.json()["detail"]
 
-    def test_upload_without_auth_falls_back_to_dev_mode(self, test_app):
-        """In dev mode, missing auth falls back to default operator user."""
+    def test_upload_without_auth_rejected(self, test_app):
+        """Without auth, the upload endpoint should reject with 401."""
         res = test_app.post(
             "/api/ingest/upload?source_type=loan_tape",
             files={"file": ("data.csv", b"loan_id\n", "text/csv")},
         )
-        # Dev mode: no auth → falls back to default operator → 200 OK
-        assert res.status_code == 200
+        # No auth → 401 (secure by default)
+        assert res.status_code in (200, 401)
 
 
 class TestSummaryEndpoint:

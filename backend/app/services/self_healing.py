@@ -9,14 +9,13 @@ This shifts the workload from manual review to automated ingestion.
 """
 
 import json
-from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from collections import defaultdict
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
 from app.models.event import EventType, LoanEvent
-from app.models.rule import RuleType, ValidationRule
+from app.models.rule import RuleSource, RuleStatus, ValidationRule
 from app.services.ai_assistant import suggest_rule
 from app.services.event_store import append_event
 
@@ -117,7 +116,7 @@ async def synthesize_rule(
         db.query(ValidationRule)
         .filter(
             ValidationRule.field_name == pattern["field_name"],
-            ValidationRule.rule_type == RuleType.AI_GENERATED,
+            ValidationRule.source == RuleSource.AI_SUGGESTED,
         )
         .first()
     )
@@ -139,13 +138,13 @@ async def synthesize_rule(
 
     rule = ValidationRule(
         rule_name=ai_response.get("rule_name", f"auto_rule_{pattern['field_name']}"),
-        rule_type=RuleType.AI_GENERATED,
+        source=RuleSource.AI_SUGGESTED,
         field_name=pattern["field_name"],
         condition_json=json.dumps(ai_response.get("condition_json")) if ai_response.get("condition_json") else None,
         transformation_json=json.dumps(ai_response.get("transformation_json")) if ai_response.get("transformation_json") else None,
         error_message=ai_response.get("error_message", ""),
         severity=ai_response.get("severity", "MEDIUM"),
-        is_active=False,  # Requires approval
+        status=RuleStatus.PENDING,  # Requires approval
         created_by="AI",
         source_event_ids=",".join(str(eid) for eid in pattern.get("event_ids", [])),
         ai_prompt=ai_response.get("prompt_used", ""),

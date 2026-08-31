@@ -5,7 +5,6 @@ POST /api/audit/rewind    – rebuild loan state at a specific timestamp
 """
 
 import json
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -26,8 +25,43 @@ from app.services.event_store import (
     project_loan_state,
     verify_hash_chain,
 )
+from app.models.event import LoanEvent
+from app.core.cryptography import compute_event_hash
 
 router = APIRouter()
+
+@router.get("/validate-ledger")
+async def validate_ledger(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Full Ledger Integrity Check."""
+    events = db.query(LoanEvent).order_by(LoanEvent.loan_id.asc(), LoanEvent.id.asc()).all()
+    
+    current_loan_id = None
+    previous_hash = None
+    
+    for event in events:
+        if event.loan_id != current_loan_id:
+            current_loan_id = event.loan_id
+            previous_hash = None
+            
+        payload = {}
+        try:
+            if event.payload_json:
+                payload = json.loads(event.payload_json)
+        except:
+            pass
+            
+        expected_hash = compute_event_hash(payload, previous_hash)
+        if event.event_hash != expected_hash:
+            raise HTTPException(
+                status_code=409,
+                detail={"status": "failed", "broken_at_id": event.id, "message": f"Hash chain broken at event {event.id} (Loan: {event.loan_id})"}
+            )
+        previous_hash = event.event_hash
+
+    return {"status": "verified", "total_records_checked": len(events)}
 
 
 @router.get("/loans/{loan_id}", response_model=AuditTrailResponse)

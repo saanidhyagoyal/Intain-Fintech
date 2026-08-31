@@ -234,7 +234,7 @@ async def get_verified_loan(
 @router.post(
     "/loans/{loan_id}/verify",
     response_model=VerifiedLoanResponse,
-    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
+    dependencies=[Depends(require_role(UserRole.REVIEWER))],
 )
 async def verify_loan(
     loan_id: str,

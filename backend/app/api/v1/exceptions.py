@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import UserRole, get_current_user, require_role
 from app.models.event import EventType, LoanEvent
-from app.models.exception import ExceptionRecord, ExceptionStatus, Severity
+from app.models.exception import ExceptionRecord, ExceptionStatus
 from app.models.user import User
 from app.schemas.exception import (
     ExceptionListResponse,
@@ -243,7 +243,7 @@ class ReworkRequest(BaseModel):
 
 @router.patch(
     "/exceptions/{exception_id}/return",
-    dependencies=[Depends(require_role(UserRole.REVIEWER, UserRole.ADMIN))],
+    dependencies=[Depends(require_role(UserRole.REVIEWER))],
 )
 async def return_exception(
     exception_id: int,

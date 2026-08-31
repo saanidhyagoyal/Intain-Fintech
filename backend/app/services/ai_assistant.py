@@ -13,7 +13,6 @@ Falls back to mock responses if API keys are invalid.
 
 import json
 from datetime import datetime, timezone
-from typing import Optional
 
 from app.core.config import get_settings
 from app.schemas.ai import AISuggestion

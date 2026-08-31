@@ -4,7 +4,7 @@ Aggregates all v1 API routers into a single router for main.py to mount.
 
 from fastapi import APIRouter
 
-from app.api.v1 import upload, loans, exceptions, verified, audit, ai, summary, auth
+from app.api.v1 import upload, loans, exceptions, verified, audit, ai, summary, auth, rules
 
 api_router = APIRouter()
 
@@ -31,3 +31,6 @@ api_router.include_router(ai.router, prefix="/ai", tags=["AI Assistant"])
 
 # ── Dashboard Summary ────────────────────────────────────────
 api_router.include_router(summary.router, tags=["Dashboard"])
+
+# ── HITL Rules Engine ────────────────────────────────────────
+api_router.include_router(rules.router)

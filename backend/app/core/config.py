@@ -38,12 +38,8 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
 
     # ── Seed User Credentials (pulled from .env, no hardcoding) ─
-    SEED_ADMIN_USER: str = "admin"
-    SEED_ADMIN_PASS: str = "admin123"
     SEED_OPERATOR_USER: str = "operator"
     SEED_OPERATOR_PASS: str = "operator123"
-    SEED_REVIEWER_USER: str = "reviewer"
-    SEED_REVIEWER_PASS: str = "reviewer123"
     REVIEWER_A_USERNAME: str = "reviewer_a"
     REVIEWER_A_PASSWORD: str = "demo_password"
     REVIEWER_B_USERNAME: str = "reviewer_b"

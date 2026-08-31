@@ -4,7 +4,7 @@ export interface User {
   user_id: number;
   username: string;
   email: string;
-  role: 'ADMIN' | 'DATA_OPERATOR' | 'REVIEWER' | 'DATA_CONSUMER';
+  role: 'DATA_OPERATOR' | 'REVIEWER' | 'DATA_CONSUMER';
 }
 
 export interface LoginResponse {
@@ -209,6 +209,27 @@ export interface SummaryResponse {
   data_quality_score: number;
   clean_rows: number;
   loans_with_open_exceptions: number;
+}
+
+// ── Rules Engine ─────────────────────────────────────────────
+export interface ValidationRule {
+  id: number;
+  rule_name: string;
+  source: 'HARDCODED' | 'AI_SUGGESTED' | 'MANUAL';
+  field_name: string;
+  condition_json: string | null;
+  transformation_json: string | null;
+  logic_payload: string | null;
+  error_message: string | null;
+  severity: string;
+  status: 'PENDING' | 'ACTIVE' | 'REJECTED';
+  created_by: string | null;
+}
+
+export interface RuleCreate {
+  field_name: string;
+  condition: string;
+  transformation: string;
 }
 
 // ── Ingestion ────────────────────────────────────────────────

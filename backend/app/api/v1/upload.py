@@ -28,7 +28,7 @@ router = APIRouter()
 @router.post(
     "/upload",
     response_model=IngestionResult,
-    dependencies=[Depends(require_role(UserRole.DATA_OPERATOR, UserRole.REVIEWER, UserRole.ADMIN))],
+    dependencies=[Depends(require_role(UserRole.DATA_OPERATOR, UserRole.REVIEWER))],
 )
 async def upload_csv(
     file: UploadFile = File(...),

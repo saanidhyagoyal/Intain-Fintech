@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AlertCircle, Filter, Bot, CheckCircle, Sparkles, RefreshCw, Search, Cpu, Zap, Eye, ShieldCheck, Rocket, Hash, Shield, XCircle, AlertTriangle, X, RotateCcw } from 'lucide-react';
+import { AlertCircle, Filter, Bot, CheckCircle, Sparkles, RefreshCw, Search, Cpu, Zap, Eye, ShieldCheck, Rocket, Hash, XCircle, AlertTriangle, X, RotateCcw } from 'lucide-react';
 import api from '../api/client';
 import ExceptionCard from '../components/ExceptionCard';
 import StatsCard from '../components/StatsCard';
