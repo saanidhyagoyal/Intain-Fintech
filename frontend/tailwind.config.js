@@ -49,6 +49,10 @@ export default {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'shimmer': 'shimmer 2s linear infinite',
         'copilot-pulse': 'copilotPulse 3s infinite',
+        'orb-drift-1': 'orbDrift1 12s ease-in-out infinite',
+        'orb-drift-2': 'orbDrift2 16s ease-in-out infinite',
+        'orb-drift-3': 'orbDrift3 20s ease-in-out infinite',
+        'grid-fade': 'gridFade 8s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -66,6 +70,24 @@ export default {
         copilotPulse: {
           '0%, 100%': { opacity: '1', transform: 'scale(1)' },
           '50%': { opacity: '0.8', transform: 'scale(1.02)' },
+        },
+        orbDrift1: {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)', opacity: '0.3' },
+          '33%': { transform: 'translate(4%, 6%) scale(1.05)', opacity: '0.4' },
+          '66%': { transform: 'translate(-3%, 2%) scale(0.97)', opacity: '0.25' },
+        },
+        orbDrift2: {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)', opacity: '0.2' },
+          '40%': { transform: 'translate(-5%, -4%) scale(1.08)', opacity: '0.3' },
+          '70%': { transform: 'translate(3%, -2%) scale(0.95)', opacity: '0.15' },
+        },
+        orbDrift3: {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)', opacity: '0.15' },
+          '50%': { transform: 'translate(6%, -3%) scale(1.1)', opacity: '0.25' },
+        },
+        gridFade: {
+          '0%, 100%': { opacity: '0.12' },
+          '50%': { opacity: '0.22' },
         },
       },
       backdropBlur: {

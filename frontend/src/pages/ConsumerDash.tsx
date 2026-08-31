@@ -39,16 +39,21 @@ export default function ConsumerDash() {
     fetchData();
   }, []);
 
-  const exportCSV = async () => {
+  const exportCSV = async (e: React.MouseEvent) => {
+    e.preventDefault();
     try {
       const res = await api.get('/verified-loans/export', { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      // Ensure we add the correct MIME type so the OS recognizes it as CSV
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', 'verified_loans_export.csv');
+      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      document.body.removeChild(link);
+      setTimeout(() => window.URL.revokeObjectURL(url), 2000);
     } catch { /* ignore */ }
   };
 
