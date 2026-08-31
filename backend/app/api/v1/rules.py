@@ -22,7 +22,7 @@ from app.core.security import get_current_user
 from app.models.rule import ValidationRule, RuleSource, RuleStatus
 
 
-router = APIRouter(prefix="/rules", tags=["rules"])
+router = APIRouter(tags=["rules"])
 
 
 # ── Pydantic Guardrail Schema ────────────────────────────────
