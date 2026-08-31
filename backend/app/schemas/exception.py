@@ -23,6 +23,7 @@ class ExceptionResponse(BaseModel):
     ai_suggestion: Optional[dict] = None
     reviewer_comment: Optional[str] = None
     resolved_by: Optional[int] = None
+    resolved_by_username: Optional[str] = None
     resolved_at: Optional[datetime] = None
     resolution_type: Optional[str] = None
     created_at: datetime

@@ -8,9 +8,11 @@ import type { ExceptionRecord as ExcType, AISuggestion } from '../types';
 interface ExceptionCardProps {
   exception: ExcType;
   onResolve?: () => void;
+  lockedById?: number | null;
+  lockedByUsername?: string | null;
 }
 
-export default function ExceptionCard({ exception, onResolve }: ExceptionCardProps) {
+export default function ExceptionCard({ exception, onResolve, lockedById, lockedByUsername }: ExceptionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiData, setAiData] = useState<AISuggestion | null>(exception.ai_suggestion);
@@ -78,7 +80,7 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
   const undoResolve = async () => {
     setUndoing(true);
     try {
-      await api.patch(`/exceptions/${exception.id}/reopen`);
+      await api.patch(`/exceptions/${exception.id}/return`, { reason: "Maker reverted resolution" });
       onResolve?.();
     } catch {
       alert("Failed to undo resolution.");
@@ -118,6 +120,11 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
             </span>
           </h3>
           <p className="text-sm text-surface-400 mt-1">{exception?.description}</p>
+          {lockedById && String(lockedById) !== String(currentUser.user_id) && exception.status === 'OPEN' && (
+            <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-warning-400 bg-warning-500/10 border border-warning-500/20 rounded-lg">
+              <span className="text-sm">🔒</span> Locked by Maker: {lockedByUsername || lockedById}
+            </div>
+          )}
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
@@ -142,8 +149,8 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
             </div>
           </div>
 
-          {/* AI Section */}
-          {exception.status !== 'RESOLVED' && (
+          {/* Resolve Actions */}
+          {exception.status === 'OPEN' && (!lockedById || String(lockedById) === String(currentUser.user_id)) && (
             <div className="border-t border-surface-700/50 pt-4 mt-4">
               <AIPanel
                 loading={loadingAI}
@@ -178,14 +185,16 @@ export default function ExceptionCard({ exception, onResolve }: ExceptionCardPro
                     Return for Rework
                   </button>
                 )}
-                <button
-                  onClick={undoResolve}
-                  disabled={undoing}
-                  className="btn-ghost text-xs px-2 py-1 flex items-center gap-1.5 text-surface-400 hover:text-surface-200 hover:bg-surface-800"
-                >
-                  <RotateCcw className={`w-3.5 h-3.5 ${undoing ? 'animate-spin' : ''}`} />
-                  {undoing ? 'Undoing...' : 'Undo'}
-                </button>
+                {currentUser.user_id === exception.resolved_by && (
+                  <button
+                    onClick={undoResolve}
+                    disabled={undoing}
+                    className="btn-ghost text-xs px-2 py-1 flex items-center gap-1.5 text-surface-400 hover:text-surface-200 hover:bg-surface-800"
+                  >
+                    <RotateCcw className={`w-3.5 h-3.5 ${undoing ? 'animate-spin' : ''}`} />
+                    {undoing ? 'Undoing...' : 'Undo'}
+                  </button>
+                )}
               </div>
             </div>
           )}

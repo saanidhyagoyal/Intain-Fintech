@@ -124,11 +124,12 @@ export interface ExceptionRecord {
   description: string | null;
   severity: Severity;
   status: ExceptionStatus;
-  ai_suggestion: AISuggestion | null;
-  reviewer_comment: string | null;
-  resolved_by: number | null;
-  resolved_at: string | null;
-  resolution_type: string | null;
+  ai_suggestion?: Record<string, any> | null;
+  reviewer_comment?: string | null;
+  resolved_by?: number | null;
+  resolved_by_username?: string | null;
+  resolved_at?: string | null;
+  resolution_type?: string | null;
   created_at: string;
 }
 

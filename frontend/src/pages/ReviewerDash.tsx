@@ -456,7 +456,12 @@ export default function ReviewerDash() {
             </div>
           ) : (
             <div className="space-y-6">
-              {Object.entries(groupedExceptions).map(([loanId, loanExceptions]) => (
+              {Object.entries(groupedExceptions).map(([loanId, loanExceptions]) => {
+                const makerExc = loanExceptions.find(e => e.status === 'RESOLVED' && e.resolved_by);
+                const lockedById = makerExc ? makerExc.resolved_by : null;
+                const lockedByUsername = makerExc ? makerExc.resolved_by_username : null;
+
+                return (
                 <div key={loanId} className="bg-surface-900/50 rounded-xl border border-surface-700/50 overflow-hidden shadow-sm">
                   {/* Loan Header */}
                   <div className="px-4 py-3 bg-surface-800/50 border-b border-surface-700/50 flex justify-between items-center">
@@ -471,7 +476,13 @@ export default function ReviewerDash() {
                   {/* Exception Cards */}
                   <div className="p-4 space-y-3">
                     {loanExceptions.map((exc) => (
-                      <ExceptionCard key={exc.id} exception={exc} onResolve={fetchData} />
+                      <ExceptionCard 
+                        key={exc.id} 
+                        exception={exc} 
+                        onResolve={fetchData}
+                        lockedById={lockedById}
+                        lockedByUsername={lockedByUsername}
+                      />
                     ))}
                   </div>
 
@@ -553,7 +564,7 @@ export default function ReviewerDash() {
                     </div>
                   )}
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </>

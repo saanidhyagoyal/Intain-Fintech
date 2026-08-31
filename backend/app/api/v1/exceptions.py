@@ -15,6 +15,7 @@ from app.core.database import get_db
 from app.core.security import UserRole, get_current_user, require_role
 from app.models.event import EventType, LoanEvent
 from app.models.exception import ExceptionRecord, ExceptionStatus, Severity
+from app.models.user import User
 from app.schemas.exception import (
     ExceptionListResponse,
     ExceptionResolveRequest,
@@ -61,6 +62,11 @@ async def list_exceptions(
         .all()
     )
 
+    # Fetch all resolved_by user IDs
+    user_ids = {exc.resolved_by for exc in exceptions if exc.resolved_by}
+    users = db.query(User).filter(User.id.in_(user_ids)).all() if user_ids else []
+    username_map = {u.id: u.username for u in users}
+
     items = []
     for exc in exceptions:
         ai_suggestion = None
@@ -84,6 +90,7 @@ async def list_exceptions(
                 ai_suggestion=ai_suggestion,
                 reviewer_comment=exc.reviewer_comment,
                 resolved_by=exc.resolved_by,
+                resolved_by_username=username_map.get(exc.resolved_by) if exc.resolved_by else None,
                 resolved_at=exc.resolved_at,
                 resolution_type=exc.resolution_type,
                 created_at=exc.created_at,
@@ -123,6 +130,19 @@ async def resolve_exception(
 
     if exc.status == ExceptionStatus.RESOLVED:
         raise HTTPException(status_code=400, detail="Exception already resolved")
+
+    # Enforce Single-Maker Loan Locking
+    other_resolved_exc = (
+        db.query(ExceptionRecord)
+        .filter(ExceptionRecord.loan_id == exc.loan_id)
+        .filter(ExceptionRecord.status == ExceptionStatus.RESOLVED)
+        .first()
+    )
+    if other_resolved_exc and other_resolved_exc.resolved_by != current_user["user_id"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Single-Actor Lock: Another Reviewer has already begun resolving exceptions for this Loan ID. You cannot fragment the resolution."
+        )
 
     # Determine the patch to apply
     if req.apply_ai_suggestion:
