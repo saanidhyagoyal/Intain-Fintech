@@ -102,7 +102,8 @@ function OperatorHub({ summary, fetchData }: { summary: SummaryResponse; fetchDa
 
 function OperatorLogs({ summary }: { summary: SummaryResponse }) {
 
-  const downloadComplianceReport = () => {
+  const downloadComplianceReport = (e: React.MouseEvent) => {
+    e.preventDefault();
     // Generate a simple CSV blob from the summary data
     const csvRows = [
       ["Metric", "Value"],
@@ -112,13 +113,17 @@ function OperatorLogs({ summary }: { summary: SummaryResponse }) {
       ["Data Quality Score", `${summary.data_quality_score}%`]
     ];
     const csvString = csvRows.map(row => row.join(",")).join("\n");
-    const blob = new Blob([csvString], { type: 'text/csv' });
+    // Add BOM for Excel compatibility
+    const blob = new Blob(["\uFEFF" + csvString], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'compliance_report.csv';
+    link.setAttribute('download', 'compliance_report.csv');
+    link.style.display = 'none';
+    document.body.appendChild(link);
     link.click();
-    window.URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+    setTimeout(() => window.URL.revokeObjectURL(url), 2000);
   };
 
   if (summary.recent_uploads.length === 0) {

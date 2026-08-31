@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Shield, ArrowRight, UserCog, Bot, Database } from 'lucide-react';
 import api from '../api/client';
+import FinTechBackground from '../components/FinTechBackground';
 
 /**
  * Demo credentials are pulled strictly from environment variables.
@@ -102,14 +103,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Background radial gradient */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-50"
-        style={{
-          background:
-            'radial-gradient(circle at 50% 0%, rgba(20, 184, 166, 0.1), transparent 50%)',
-        }}
-      />
+      <FinTechBackground />
 
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-10">
@@ -124,7 +118,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="glass-card p-8 animate-slide-up shadow-2xl shadow-black/50">
+        <div className="glass-card p-8 animate-slide-up shadow-2xl shadow-black/50 hover:shadow-brand-500/10 hover:-translate-y-1 transition-all duration-500">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-xs font-medium text-surface-400 uppercase tracking-wider mb-2">
@@ -192,7 +186,7 @@ export default function LoginPage() {
                   id={`demo-login-${ql.label.toLowerCase()}`}
                   onClick={() => handleDemoLogin(ql.user, ql.pass)}
                   disabled={loading || !ql.user}
-                  className="flex items-center gap-2 p-3 bg-surface-800/30 hover:bg-surface-700/50 border border-surface-700/50 rounded-xl transition-all duration-200 group text-left"
+                  className="flex items-center gap-2 p-3 bg-surface-800/30 hover:bg-surface-800/60 border border-surface-700/50 hover:border-brand-500/30 rounded-xl transition-all duration-300 group text-left hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-500/10"
                 >
                   <div className="p-1.5 bg-surface-900 rounded-lg group-hover:scale-110 transition-transform">
                     {ql.icon}
